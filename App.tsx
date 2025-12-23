@@ -23,7 +23,7 @@ import AdminLayout, { AdminTab } from './components/admin/AdminLayout';
 import AdminDashboardHome from './components/admin/AdminDashboardHome';
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [activePage, setPage] = useState<PageView>('home');
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [services, setServices] = useState<Gig[]>([]);
@@ -63,6 +63,15 @@ export default function App() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setPage('home');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   // Show loading state while checking auth
   if (loading) {
     return (
@@ -78,7 +87,7 @@ export default function App() {
   // Admin View
   if (user?.role === 'admin') {
     return (
-      <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onLogout={() => setPage('home')}>
+      <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onLogout={handleLogout}>
         {adminTab === 'dashboard' && <AdminDashboardHome orders={[]} />}
         {/* Other admin tabs can be added later */}
       </AdminLayout>
@@ -94,7 +103,7 @@ export default function App() {
         gigs={services}
         messages={[]}
         onSendMessage={() => { }}
-        onLogout={() => setPage('home')}
+        onLogout={handleLogout}
         onBrowse={() => setPage('marketplace')}
         onBuy={() => { }}
       />
