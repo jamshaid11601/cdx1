@@ -99,12 +99,12 @@ const ClientRequests: React.FC = () => {
 
             if (orderError) throw orderError;
 
-            // Update request to converted status
+            // Update request to converted status with custom_order_id
             const { error: updateError } = await supabase
                 .from('custom_requests')
                 .update({
                     status: 'converted',
-                    converted_project_id: customOrder.id
+                    custom_order_id: customOrder.id
                 })
                 .eq('id', requestToPay.id);
 
