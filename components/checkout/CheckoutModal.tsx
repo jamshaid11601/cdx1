@@ -124,11 +124,14 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
           .update({
             status: 'converted',
             custom_order_id: newOrder.id,
-            converted_project_id: newOrder.id // Also setting this for compatibility if checked elsewhere
+            converted_project_id: newOrder.id
           })
           .eq('id', gig.custom_request_id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating custom request status:', updateError);
+          throw new Error(`Failed to update request status: ${updateError.message}`);
+        }
       } else if (!isCustomRequest) {
         // Create project record for regular gigs
         const { error: projectError } = await supabase
