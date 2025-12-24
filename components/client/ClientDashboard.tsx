@@ -10,6 +10,8 @@ import { Order, User, Gig, Message, OrderStatus } from '../../types';
 import Marketplace from '../public/Marketplace';
 import ClientMessages from './ClientMessages';
 import ClientRequests from './ClientRequests';
+import CheckoutModal from '../checkout/CheckoutModal';
+import { supabase } from '../../lib/supabase';
 
 interface ClientDashboardProps {
     user: User;
@@ -19,7 +21,7 @@ interface ClientDashboardProps {
     onSendMessage: (text: string) => void;
     onLogout: () => void;
     onBrowse: () => void;
-    onBuy: (gig: Gig) => void;
+    onSuccess?: () => void; // Optional callback after successful purchase
 }
 
 type Tab = 'dashboard' | 'browse' | 'projects' | 'messages' | 'custom-requests' | 'files' | 'settings';
@@ -31,11 +33,31 @@ const STAGES: { id: OrderStatus; label: string; desc: string }[] = [
     { id: 'completed', label: 'Completed', desc: 'Project deployed and delivered.' }
 ];
 
-const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, messages, onSendMessage, onLogout, onBrowse, onBuy }) => {
+const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, messages, onSendMessage, onLogout, onBrowse, onSuccess }) => {
     const [activeTab, setActiveTab] = useState<Tab>('dashboard');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [chatInput, setChatInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Checkout modal state
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+
+    // Handle gig purchase
+    const handleBuy = (gig: Gig) => {
+        console.log('ClientDashboard handleBuy called with gig:', gig);
+        setSelectedGig(gig);
+        setIsCheckoutOpen(true);
+    };
+
+    // Handle successful checkout
+    const handleCheckoutSuccess = () => {
+        setIsCheckoutOpen(false);
+        setSelectedGig(null);
+        if (onSuccess) {
+            onSuccess(); // Refresh orders from parent
+        }
+    };
 
     // Auto-scroll to bottom of chat
     useEffect(() => {
@@ -273,7 +295,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
 
     const renderBrowseView = () => (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500 p-6 md:p-10 lg:p-12">
-            <Marketplace setPage={() => { }} gigs={gigs} onBuy={onBuy} isEmbedded={true} />
+            <Marketplace setPage={() => { }} gigs={gigs} onBuy={handleBuy} isEmbedded={true} />
         </div>
     );
 
@@ -365,6 +387,14 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                 {activeTab === 'files' && renderFilesView()}
                 {activeTab === 'settings' && renderSettingsView()}
             </main>
+
+            {/* Checkout Modal */}
+            <CheckoutModal
+                isOpen={isCheckoutOpen}
+                onClose={() => setIsCheckoutOpen(false)}
+                gig={selectedGig}
+                onSuccess={handleCheckoutSuccess}
+            />
         </div>
     );
 };

@@ -235,7 +235,7 @@ export default function App() {
         onSendMessage={() => { }}
         onLogout={handleLogout}
         onBrowse={() => setPage('marketplace')}
-        onBuy={handleBuyService}
+        onSuccess={fetchUserProjects}
       />
     );
   }
