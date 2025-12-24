@@ -7,6 +7,7 @@ import { supabase } from './lib/supabase';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
+import CheckoutModal from './components/checkout/CheckoutModal';
 
 // Public Components
 import HomePage from './components/public/HomePage';
@@ -28,6 +29,10 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [services, setServices] = useState<Gig[]>([]);
   const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
+
+  // Checkout State
+  const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // Fetch services from Supabase
   useEffect(() => {
@@ -72,6 +77,21 @@ export default function App() {
     }
   };
 
+  const handleBuyService = (gig: Gig) => {
+    if (!user) {
+      setIsLoginOpen(true);
+      return;
+    }
+    setSelectedGig(gig);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutSuccess = () => {
+    setIsCheckoutOpen(false);
+    setSelectedGig(null);
+    setPage('dashboard');
+  };
+
   // Show loading state while checking auth
   if (loading) {
     return (
@@ -105,7 +125,7 @@ export default function App() {
         onSendMessage={() => { }}
         onLogout={handleLogout}
         onBrowse={() => setPage('marketplace')}
-        onBuy={() => { }}
+        onBuy={handleBuyService}
       />
     );
   }
@@ -122,7 +142,7 @@ export default function App() {
 
       <main className="pt-0">
         {activePage === 'home' && <HomePage setPage={setPage} />}
-        {activePage === 'marketplace' && <Marketplace setPage={setPage} gigs={services} onBuy={() => { }} />}
+        {activePage === 'marketplace' && <Marketplace setPage={setPage} gigs={services} onBuy={handleBuyService} />}
         {activePage === 'custom-order' && <CustomOrder />}
         {activePage === 'about' && <AboutPage setPage={setPage} />}
         {activePage === 'portfolio' && <PortfolioPage setPage={setPage} />}
@@ -131,6 +151,13 @@ export default function App() {
       <Footer setPage={setPage} />
 
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        gig={selectedGig}
+        onSuccess={handleCheckoutSuccess}
+      />
 
       {/* Floating Action Button for Clients */}
       {user?.role === 'client' && (
