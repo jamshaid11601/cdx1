@@ -1,7 +1,7 @@
 import React from 'react';
 import { MoreVertical } from 'lucide-react';
 import { Order, OrderStatus } from '../../types';
-import { INITIAL_GIGS } from '../../constants';
+import { supabase } from '../../lib/supabase';
 
 interface AdminKanbanProps {
   orders: Order[];
@@ -16,8 +16,22 @@ const AdminKanban: React.FC<AdminKanbanProps> = ({ orders, setOrders }) => {
     { id: 'completed', label: 'Completed', color: 'border-green-500' }
   ];
 
-  const moveOrder = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+  const moveOrder = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('projects')
+        .update({ status: newStatus })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      // Update local state
+      setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    } catch (error) {
+      console.error('Error updating project status:', error);
+      alert('Failed to update project status');
+    }
   };
 
   return (
@@ -32,28 +46,30 @@ const AdminKanban: React.FC<AdminKanbanProps> = ({ orders, setOrders }) => {
               {orders.filter(o => o.status === col.id).map(order => (
                 <div key={order.id} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
                   <div className="flex justify-between mb-2">
-                    <span className="text-xs font-mono text-slate-400">{order.id}</span>
+                    <span className="text-xs font-mono text-slate-400">#{order.id.slice(0, 8)}</span>
                     <MoreVertical size={14} className="text-slate-300" />
                   </div>
                   <div className="font-bold text-slate-900 mb-1">{order.client}</div>
-                  <div className="text-xs text-slate-500 mb-3">{INITIAL_GIGS.find(g => g.id === order.gigId)?.title || 'Custom Project'}</div>
+                  <div className="text-xs text-slate-500 mb-3">{order.title || 'Project'}</div>
                   <div className="flex justify-between items-center pt-3 border-t border-slate-50">
-                    <div className="flex items-center gap-1">
-                      <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-bold">{order.assignee.charAt(0)}</div>
-                      <span className="text-xs text-slate-500">{order.assignee}</span>
-                    </div>
+                    <div className="text-xs text-slate-400">{order.date}</div>
                     <div className="font-bold text-slate-900 text-sm">${order.amount}</div>
                   </div>
                   {col.id !== 'completed' && index < columns.length - 1 && (
-                    <button 
-                      onClick={() => moveOrder(order.id, columns[index + 1].id)} 
-                      className="mt-3 w-full text-xs bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 py-1 rounded transition-colors"
+                    <button
+                      onClick={() => moveOrder(order.id, columns[index + 1].id)}
+                      className="mt-3 w-full text-xs bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 py-2 rounded transition-colors font-medium"
                     >
-                      Move Next &rarr;
+                      Move to {columns[index + 1].label} &rarr;
                     </button>
                   )}
                 </div>
               ))}
+              {orders.filter(o => o.status === col.id).length === 0 && (
+                <div className="text-center text-slate-400 text-sm py-8">
+                  No orders in this stage
+                </div>
+              )}
             </div>
           </div>
         ))}
