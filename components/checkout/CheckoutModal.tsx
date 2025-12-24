@@ -153,7 +153,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
       />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-5xl bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col md:flex-row max-h-[90vh] md:h-auto">
+      <div className={`relative w-full ${gig?.title.includes('Custom Project') ? 'max-w-2xl' : 'max-w-5xl'} bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col md:flex-row max-h-[90vh] md:h-auto`}>
 
         {/* Close Button */}
         <button
@@ -207,7 +207,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
         )}
 
         {/* Right Side: Payment Form */}
-        <div className={`${gig.title.includes('Custom Project') ? 'w-full' : 'w-full md:w-7/12'} p-8 md:p-10 bg-white relative`}>
+        <div className={`${gig?.title.includes('Custom Project') ? 'w-full' : 'w-full md:w-7/12'} p-8 md:p-10 bg-white relative flex flex-col justify-center min-h-[500px]`}>
 
           {/* STEP: Payment Form */}
           {step === 'payment' && (

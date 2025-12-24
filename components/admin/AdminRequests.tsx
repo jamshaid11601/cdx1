@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, CheckCircle, XCircle, Clock, ArrowRight, Rocket, MessageSquare } from 'lucide-react';
+import {
+    Search, Filter, Clock, CheckCircle2, XCircle, Eye,
+    MessageSquare, ArrowRight, User, Mail, DollarSign,
+    Trash2, AlertCircle, Rocket, ExternalLink, PlusCircle, Loader2
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import RequestMessaging from '../shared/RequestMessaging';
 
@@ -29,6 +33,7 @@ const AdminRequests: React.FC = () => {
     const [converting, setConverting] = useState(false);
     const [modalTab, setModalTab] = useState<'details' | 'messages'>('details');
     const [convertPrice, setConvertPrice] = useState<string>('');
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         fetchRequests();
@@ -109,7 +114,6 @@ const AdminRequests: React.FC = () => {
         setConverting(true);
         try {
             // Update request to approved status with price
-            // Client will see this and can proceed to payment
             const { error: updateError } = await supabase
                 .from('custom_requests')
                 .update({
@@ -120,9 +124,7 @@ const AdminRequests: React.FC = () => {
 
             if (updateError) throw updateError;
 
-            alert('Request approved! Client can now proceed with payment.');
-            setShowConvertModal(false);
-            setConvertPrice('');
+            setShowSuccess(true);
             fetchRequests();
         } catch (error: any) {
             console.error('Error approving request:', error);
@@ -244,7 +246,7 @@ const AdminRequests: React.FC = () => {
                                             <p className="text-sm text-slate-500">{request.email}</p>
                                         </div>
                                     </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(request.status)}`}>
+                                    <span className={`px - 3 py - 1 rounded - full text - xs font - bold uppercase ${getStatusColor(request.status)} `}>
                                         {request.status}
                                     </span>
                                 </div>
@@ -297,7 +299,7 @@ const AdminRequests: React.FC = () => {
                                 </button>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(selectedRequest.status)}`}>
+                                <span className={`px - 3 py - 1 rounded - full text - xs font - bold uppercase ${getStatusColor(selectedRequest.status)} `}>
                                     {selectedRequest.status}
                                 </span>
                                 {/* Tabs */}
@@ -394,7 +396,7 @@ const AdminRequests: React.FC = () => {
                                     disabled={selectedRequest.status === 'approved'}
                                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    <CheckCircle size={18} /> Approve
+                                    <CheckCircle2 size={18} /> Approve
                                 </button>
                                 <button
                                     onClick={() => updateRequestStatus(selectedRequest.id, 'rejected')}
@@ -421,68 +423,99 @@ const AdminRequests: React.FC = () => {
 
             {/* Convert to Project Confirmation Modal */}
             {showConvertModal && selectedRequest && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowConvertModal(false)}>
-                    <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Rocket size={32} className="text-purple-600" />
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+                    <div className="bg-white rounded-[2rem] max-w-lg w-full p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+                        {showSuccess ? (
+                            <div className="text-center py-6">
+                                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle2 size={40} className="text-green-600" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-slate-900 mb-2">Request Approved!</h3>
+                                <p className="text-slate-600 mb-8">
+                                    The client has been notified and can now proceed with the payment of <strong>${parseFloat(convertPrice).toLocaleString()}</strong>.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setShowConvertModal(false);
+                                        setShowSuccess(false);
+                                        setConvertPrice('');
+                                        setSelectedRequest(null);
+                                    }}
+                                    className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+                                >
+                                    Dismiss
+                                </button>
                             </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Approve & Set Price</h3>
-                            <p className="text-slate-600">
-                                Set the project price for <strong>{selectedRequest.name}</strong>. They'll be able to pay and start the project.
-                            </p>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="text-center mb-8">
+                                    <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        <PlusCircle size={32} className="text-purple-600" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Approve & Set Price</h3>
+                                    <p className="text-slate-600">
+                                        Set the project price for <strong>{selectedRequest.name || 'this client'}</strong>.
+                                    </p>
+                                </div>
 
-                        <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Category:</span>
-                                <span className="font-medium text-slate-900">{getCategoryLabel(selectedRequest.category)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Requested Budget:</span>
-                                <span className="font-medium text-slate-900">{selectedRequest.budget}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Timeline:</span>
-                                <span className="font-medium text-slate-900">{selectedRequest.timeline}</span>
-                            </div>
-                        </div>
+                                <div className="bg-slate-50 rounded-2xl p-6 mb-8 space-y-3">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500 font-medium">Category</span>
+                                        <span className="font-bold text-slate-900">{getCategoryLabel(selectedRequest.category)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500 font-medium">Budget</span>
+                                        <span className="font-bold text-slate-900">{selectedRequest.budget}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-slate-500 font-medium">Timeline</span>
+                                        <span className="font-bold text-slate-900">{selectedRequest.timeline}</span>
+                                    </div>
+                                </div>
 
-                        {/* Price Input */}
-                        <div className="mb-6">
-                            <label className="block text-sm font-bold text-slate-700 mb-2">
-                                Project Price (USD) *
-                            </label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
-                                <input
-                                    type="number"
-                                    value={convertPrice}
-                                    onChange={(e) => setConvertPrice(e.target.value)}
-                                    placeholder="10000"
-                                    className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-lg font-bold"
-                                    min="0"
-                                    step="100"
-                                />
-                            </div>
-                            <p className="text-xs text-slate-500 mt-1">Client will pay this amount to start the project</p>
-                        </div>
+                                {/* Price Input */}
+                                <div className="mb-8">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                                        Project Price (USD)
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xl">$</span>
+                                        <input
+                                            type="number"
+                                            value={convertPrice}
+                                            onChange={(e) => setConvertPrice(e.target.value)}
+                                            placeholder="5,000"
+                                            className="w-full pl-10 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-2xl font-bold transition-all"
+                                            min="0"
+                                            step="100"
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-2 text-center">Amount the client will pay to initiate the project</p>
+                                </div>
 
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => { setShowConvertModal(false); setConvertPrice(''); }}
-                                className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={convertToProject}
-                                disabled={converting || !convertPrice}
-                                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                {converting ? 'Approving...' : 'Approve & Set Price'}
-                            </button>
-                        </div>
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={() => { setShowConvertModal(false); setConvertPrice(''); setShowSuccess(false); }}
+                                        className="flex-1 px-6 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={convertToProject}
+                                        disabled={converting || !convertPrice}
+                                        className="flex-[1.5] px-6 py-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-purple-200 transition-all hover:scale-[1.02]"
+                                    >
+                                        {converting ? (
+                                            <>
+                                                <Loader2 size={18} className="animate-spin" />
+                                                Approving...
+                                            </>
+                                        ) : 'Approve & Set Price'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

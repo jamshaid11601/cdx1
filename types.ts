@@ -33,11 +33,13 @@ export type OrderStatus = 'pending' | 'in_progress' | 'review' | 'completed';
 export interface Order {
   id: string;
   client: string;
-  gigId: string;
+  gigId: string | null;
   amount: number;
   status: OrderStatus;
   date: string;
   assignee: string;
+  title: string;
+  description: string;
 }
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';

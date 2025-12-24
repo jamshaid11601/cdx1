@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare, ArrowRight, ArrowLeft, CheckCircle2,
   Globe, Smartphone, Cpu, Palette, Layout, Server,
@@ -8,7 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
 const CustomOrder: React.FC = () => {
-  const { supabaseUser } = useAuth();
+  const { supabaseUser, user } = useAuth();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,17 @@ const CustomOrder: React.FC = () => {
     timeline: '1-3m',
     attachmentName: ''
   });
+
+  // Auto-populate user data if logged in
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.full_name || prev.name,
+        email: user.email || prev.email
+      }));
+    }
+  }, [user]);
 
   const categories = [
     { id: 'web', label: 'Web Platform', icon: <Globe size={24} />, desc: 'SaaS, Marketplace, or Corp Site' },
@@ -242,14 +253,26 @@ const CustomOrder: React.FC = () => {
                       <label className="text-sm font-bold text-slate-700">Your Name</label>
                       <div className="relative">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input type="text" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="John Doe" />
+                        <input
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                          placeholder="John Doe"
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700">Work Email</label>
                       <div className="relative">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input type="email" className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="john@company.com" />
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                          placeholder="john@company.com"
+                        />
                       </div>
                     </div>
                   </div>

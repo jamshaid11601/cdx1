@@ -135,7 +135,8 @@ export default function App() {
         date: new Date(project.created_at).toLocaleDateString(),
         title: project.title,
         description: project.description,
-        isCustomOrder: false
+        isCustomOrder: false,
+        rawCreatedAt: project.created_at
       }));
 
       // Transform custom orders
@@ -148,12 +149,13 @@ export default function App() {
         date: new Date(order.created_at).toLocaleDateString(),
         title: order.title,
         description: order.description,
-        isCustomOrder: true
+        isCustomOrder: true,
+        rawCreatedAt: order.created_at
       }));
 
-      // Combine and sort by date
+      // Combine and sort by date using raw timestamp
       const allOrders = [...transformedProjects, ...transformedCustomOrders]
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        .sort((a, b) => new Date(b.rawCreatedAt).getTime() - new Date(a.rawCreatedAt).getTime());
 
       setProjects(allOrders);
     } catch (error) {
