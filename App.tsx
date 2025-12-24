@@ -176,10 +176,13 @@ export default function App() {
   };
 
   const handleBuyService = (gig: Gig) => {
+    console.log('handleBuyService called with gig:', gig);
     if (!user) {
+      console.log('No user, opening login modal');
       setIsLoginOpen(true);
       return;
     }
+    console.log('Setting selectedGig and opening checkout');
     setSelectedGig(gig);
     setIsCheckoutOpen(true);
   };

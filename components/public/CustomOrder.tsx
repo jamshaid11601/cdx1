@@ -256,7 +256,13 @@ const CustomOrder: React.FC = () => {
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Project Description</label>
                     <div className="relative">
-                      <textarea rows={5} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none" placeholder="Describe the core features, target audience, and any specific tech stack preferences..."></textarea>
+                      <textarea
+                        rows={5}
+                        value={formData.details}
+                        onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                        placeholder="Describe the core features, target audience, and any specific tech stack preferences..."
+                      />
                     </div>
                   </div>
 

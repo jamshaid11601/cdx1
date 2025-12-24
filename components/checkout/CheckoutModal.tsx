@@ -47,6 +47,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
     }
   }, [isOpen, user]);
 
+  console.log('CheckoutModal render - isOpen:', isOpen, 'gig:', gig);
+
   if (!isOpen || !gig) return null;
 
   const handlePayment = async (e: React.FormEvent) => {
