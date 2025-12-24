@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestMessaging from '../shared/RequestMessaging';
 import CustomOrder from '../public/CustomOrder';
+import CheckoutModal from '../checkout/CheckoutModal';
 
 interface CustomRequest {
     id: string;
@@ -26,6 +27,8 @@ const ClientRequests: React.FC = () => {
     const [selectedRequest, setSelectedRequest] = useState<CustomRequest | null>(null);
     const [modalTab, setModalTab] = useState<'details' | 'messages'>('details');
     const [showNewRequestForm, setShowNewRequestForm] = useState(false);
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [requestToPay, setRequestToPay] = useState<CustomRequest | null>(null);
 
     useEffect(() => {
         if (supabaseUser) {
@@ -47,6 +50,72 @@ const ClientRequests: React.FC = () => {
             console.error('Error fetching requests:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePayNow = (request: CustomRequest) => {
+        setRequestToPay(request);
+        setIsCheckoutOpen(true);
+    };
+
+    const handlePaymentSuccess = async () => {
+        if (!requestToPay) return;
+
+        try {
+            // Get or create client record
+            const { data: clientData } = await supabase
+                .from('clients')
+                .select('id')
+                .eq('user_id', supabaseUser!.id)
+                .single();
+
+            let clientId = clientData?.id;
+
+            if (!clientId) {
+                const { data: newClient, error: clientError } = await supabase
+                    .from('clients')
+                    .insert({ user_id: supabaseUser!.id })
+                    .select()
+                    .single();
+
+                if (clientError) throw clientError;
+                clientId = newClient.id;
+            }
+
+            // Create project from the custom request
+            const { data: project, error: projectError } = await supabase
+                .from('projects')
+                .insert({
+                    client_id: clientId,
+                    title: `${getCategoryLabel(requestToPay.category)} Project`,
+                    description: requestToPay.details || `${getCategoryLabel(requestToPay.category)} project`,
+                    amount: requestToPay.approved_price,
+                    status: 'pending'
+                })
+                .select()
+                .single();
+
+            if (projectError) throw projectError;
+
+            // Update request to converted status
+            const { error: updateError } = await supabase
+                .from('custom_requests')
+                .update({
+                    status: 'converted',
+                    converted_project_id: project.id
+                })
+                .eq('id', requestToPay.id);
+
+            if (updateError) throw updateError;
+
+            // Close checkout and refresh
+            setIsCheckoutOpen(false);
+            setRequestToPay(null);
+            fetchRequests();
+            alert('Payment successful! Your project has been created.');
+        } catch (error: any) {
+            console.error('Error processing payment:', error);
+            alert('Payment successful but project creation failed: ' + error.message);
         }
     };
 
@@ -193,8 +262,7 @@ const ClientRequests: React.FC = () => {
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        // TODO: Trigger payment flow
-                                        alert('Payment flow coming soon!');
+                                        handlePayNow(request);
                                     }}
                                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 animate-pulse"
                                 >
@@ -313,6 +381,35 @@ const ClientRequests: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Checkout Modal for Payment */}
+            {requestToPay && (
+                <CheckoutModal
+                    isOpen={isCheckoutOpen}
+                    onClose={() => {
+                        setIsCheckoutOpen(false);
+                        setRequestToPay(null);
+                    }}
+                    gig={{
+                        id: requestToPay.id,
+                        title: `${getCategoryLabel(requestToPay.category)} - Custom Project`,
+                        description: requestToPay.details || 'Custom project request',
+                        price: requestToPay.approved_price || 0,
+                        category: requestToPay.category,
+                        features: [
+                            `Category: ${getCategoryLabel(requestToPay.category)}`,
+                            `Timeline: ${requestToPay.timeline || 'To be determined'}`,
+                            `Budget: ${requestToPay.budget || 'Custom'}`,
+                            'Dedicated project manager',
+                            'Regular progress updates'
+                        ],
+                        image: '',
+                        rating: 5.0,
+                        status: 'active'
+                    }}
+                    onSuccess={handlePaymentSuccess}
+                />
             )}
         </div>
     );
