@@ -81,6 +81,9 @@ const ClientRequests: React.FC = () => {
         setIsCheckoutOpen(false);
         setRequestToPay(null);
         fetchRequests();
+
+        // Explicitly move to projects tab to see the newly created project
+        window.dispatchEvent(new CustomEvent('changeTab', { detail: 'projects' }));
     };
 
     const getCategoryLabel = (category: string) => {
@@ -183,8 +186,8 @@ const ClientRequests: React.FC = () => {
                         key={tab.id}
                         onClick={() => setStatusFilter(tab.id as any)}
                         className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${statusFilter === tab.id
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-slate-500 hover:text-slate-700'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
                             }`}
                     >
                         {tab.label}
@@ -199,8 +202,8 @@ const ClientRequests: React.FC = () => {
                         <div
                             key={request.id}
                             className={`bg-white rounded-2xl border transition-all duration-300 p-6 hover:shadow-xl cursor-pointer ${request.status === 'converted'
-                                    ? 'bg-green-50/50 border-green-200 ring-1 ring-green-100'
-                                    : 'border-slate-200 shadow-sm'
+                                ? 'bg-green-50/50 border-green-200 ring-1 ring-green-100'
+                                : 'border-slate-200 shadow-sm'
                                 }`}
                             onClick={() => setSelectedRequest(request)}
                         >
@@ -215,8 +218,8 @@ const ClientRequests: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className={`px-4 py-2 rounded-full text-sm font-bold border flex items-center gap-2 ${request.status === 'converted'
-                                        ? 'bg-green-600 text-white border-green-600'
-                                        : getStatusColor(request.status)
+                                    ? 'bg-green-600 text-white border-green-600'
+                                    : getStatusColor(request.status)
                                     }`}>
                                     {request.status === 'converted' ? <CheckCircle size={16} /> : getStatusIcon(request.status)}
                                     <span className="capitalize">{request.status === 'converted' ? 'Paid & Active' : request.status}</span>

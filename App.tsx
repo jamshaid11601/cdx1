@@ -217,13 +217,17 @@ export default function App() {
   };
 
   const handleCheckoutSuccess = () => {
+    console.log('✅ App.tsx: handleCheckoutSuccess called');
     setIsCheckoutOpen(false);
     setSelectedGig(null);
     if (user?.role === 'admin') {
+      console.log('Admin detected, fetching all projects');
       fetchAllProjects();
     } else {
+      console.log('Client detected, fetching user projects');
       fetchUserProjects();
     }
+    console.log('Navigating to dashboard...');
     setPage('dashboard');
   };
 

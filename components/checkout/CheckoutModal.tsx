@@ -166,9 +166,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
     }
   };
 
+  const handleClose = () => {
+    if (step === 'success') {
+      onSuccess();
+    } else {
+      onClose();
+    }
+  };
+
   const handleGoToDashboard = () => {
     onSuccess();
-    onClose();
   };
 
   const formatCardNumber = (val: string) => {
@@ -180,7 +187,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity duration-300"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Modal Card */}
@@ -188,7 +195,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
 
         {/* Close Button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 z-20 p-2 bg-white/50 hover:bg-white rounded-full transition-colors text-slate-500 hover:text-slate-900"
         >
           <X size={20} />
