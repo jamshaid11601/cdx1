@@ -200,7 +200,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                                         </span>
                                         <span className="text-slate-400 text-sm font-mono font-bold">{generateOrderNumber(order.id)}</span>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{gigs.find(g => g.id === order.gigId)?.title || 'Custom Enterprise Project'}</h3>
+                                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{order.title || gigs.find(g => g.id === order.gigId)?.title || 'Custom Enterprise Project'}</h3>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Investment</div>
