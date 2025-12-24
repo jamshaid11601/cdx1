@@ -90,17 +90,33 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
 
             if (!clientData) return;
 
-            const { data: projectsData, error } = await supabase
+            // Fetch regular projects
+            const { data: projectsData, error: projectsError } = await supabase
                 .from('projects')
                 .select('id, title')
                 .eq('client_id', clientData.id)
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (projectsError) throw projectsError;
 
-            setProjects(projectsData || []);
-            if (projectsData && projectsData.length > 0) {
-                setSelectedProject(projectsData[0].id);
+            // Fetch custom orders
+            const { data: customOrdersData, error: customOrdersError } = await supabase
+                .from('custom_orders')
+                .select('id, title')
+                .eq('client_id', clientData.id)
+                .order('created_at', { ascending: false });
+
+            if (customOrdersError) throw customOrdersError;
+
+            // Combine both
+            const allProjects = [
+                ...(projectsData || []),
+                ...(customOrdersData || [])
+            ];
+
+            setProjects(allProjects);
+            if (allProjects.length > 0) {
+                setSelectedProject(allProjects[0].id);
             }
         } catch (error) {
             console.error('Error fetching projects:', error);
