@@ -16,6 +16,7 @@ interface Message {
 interface Project {
     id: string;
     title: string;
+    request_id?: string | null;
 }
 
 interface ClientMessagesProps {
@@ -55,15 +56,21 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
     // Fetch messages when project is selected
     useEffect(() => {
         if (selectedProject) {
+            const currentProject = projects.find(p => p.id === selectedProject);
+            const messageFilter = currentProject?.request_id
+                ? `request_id=eq.${currentProject.request_id}`
+                : `project_id=eq.${selectedProject}`;
+
             fetchMessages();
+
             // Set up real-time subscription
             const subscription = supabase
-                .channel('messages')
+                .channel(`project_messages_${selectedProject}`)
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
                     table: 'messages',
-                    filter: `project_id=eq.${selectedProject}`
+                    filter: messageFilter
                 }, () => {
                     fetchMessages();
                 })
@@ -73,7 +80,7 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
                 subscription.unsubscribe();
             };
         }
-    }, [selectedProject]);
+    }, [selectedProject, projects]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -102,14 +109,14 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
             // Fetch custom orders
             const { data: customOrdersData, error: customOrdersError } = await supabase
                 .from('custom_orders')
-                .select('id, title')
+                .select('id, title, request_id')
                 .eq('client_id', clientData.id)
                 .order('created_at', { ascending: false });
 
             if (customOrdersError) throw customOrdersError;
 
             // Combine both
-            const allProjects = [
+            const allProjects: Project[] = [
                 ...(projectsData || []),
                 ...(customOrdersData || [])
             ];
@@ -126,11 +133,15 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
     const fetchMessages = async () => {
         if (!selectedProject) return;
 
+        const currentProject = projects.find(p => p.id === selectedProject);
+        const column = currentProject?.request_id ? 'request_id' : 'project_id';
+        const idToQuery = currentProject?.request_id || selectedProject;
+
         try {
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
-                .eq('project_id', selectedProject)
+                .eq(column, idToQuery)
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
@@ -143,17 +154,25 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
     const handleSend = async () => {
         if (!inputText.trim() || !selectedProject || !supabaseUser) return;
 
+        const currentProject = projects.find(p => p.id === selectedProject);
+        const messageData: any = {
+            sender_id: supabaseUser.id,
+            sender_type: 'client',
+            message_text: inputText.trim(),
+            read: false
+        };
+
+        if (currentProject?.request_id) {
+            messageData.request_id = currentProject.request_id;
+        } else {
+            messageData.project_id = selectedProject;
+        }
+
         setLoading(true);
         try {
             const { error } = await supabase
                 .from('messages')
-                .insert({
-                    project_id: selectedProject,
-                    sender_id: supabaseUser.id,
-                    sender_type: 'client',
-                    message_text: inputText.trim(),
-                    read: false
-                });
+                .insert(messageData);
 
             if (error) throw error;
 

@@ -17,6 +17,7 @@ interface Project {
     id: string;
     title: string;
     client_name: string;
+    request_id?: string | null;
 }
 
 const AdminMessages: React.FC = () => {
@@ -36,15 +37,21 @@ const AdminMessages: React.FC = () => {
     // Fetch messages when project is selected
     useEffect(() => {
         if (selectedProject) {
+            const currentProject = projects.find(p => p.id === selectedProject);
+            const messageFilter = currentProject?.request_id
+                ? `request_id=eq.${currentProject.request_id}`
+                : `project_id=eq.${selectedProject}`;
+
             fetchMessages();
+
             // Set up real-time subscription
             const subscription = supabase
-                .channel('admin_messages')
+                .channel(`admin_project_messages_${selectedProject}`)
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
                     table: 'messages',
-                    filter: `project_id=eq.${selectedProject}`
+                    filter: messageFilter
                 }, () => {
                     fetchMessages();
                 })
@@ -54,7 +61,7 @@ const AdminMessages: React.FC = () => {
                 subscription.unsubscribe();
             };
         }
-    }, [selectedProject]);
+    }, [selectedProject, projects]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -63,32 +70,55 @@ const AdminMessages: React.FC = () => {
 
     const fetchProjects = async () => {
         try {
-            const { data, error } = await supabase
+            // Fetch regular projects
+            const { data: gigData, error: gigError } = await supabase
                 .from('projects')
                 .select(`
-          id,
-          title,
-          clients!inner (
-            id,
-            users (
-              full_name,
-              email
-            )
-          )
-        `)
+                    id,
+                    title,
+                    clients (
+                        id,
+                        users (full_name, email)
+                    )
+                `)
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
+            if (gigError) throw gigError;
 
-            const projectsWithNames = (data || []).map((p: any) => ({
+            // Fetch custom orders
+            const { data: customData, error: customError } = await supabase
+                .from('custom_orders')
+                .select(`
+                    id,
+                    title,
+                    request_id,
+                    clients (
+                        id,
+                        users (full_name, email)
+                    )
+                `)
+                .order('created_at', { ascending: false });
+
+            if (customError) throw customError;
+
+            const transformedGigs = (gigData || []).map((p: any) => ({
                 id: p.id,
                 title: p.title,
                 client_name: p.clients?.users?.full_name || p.clients?.users?.email || 'Client'
             }));
 
-            setProjects(projectsWithNames);
-            if (projectsWithNames.length > 0) {
-                setSelectedProject(projectsWithNames[0].id);
+            const transformedCustom = (customData || []).map((o: any) => ({
+                id: o.id,
+                title: o.title,
+                request_id: o.request_id,
+                client_name: o.clients?.users?.full_name || o.clients?.users?.email || 'Client'
+            }));
+
+            const allProjects = [...transformedGigs, ...transformedCustom];
+
+            setProjects(allProjects);
+            if (allProjects.length > 0 && !selectedProject) {
+                setSelectedProject(allProjects[0].id);
             }
         } catch (error) {
             console.error('Error fetching projects:', error);
@@ -98,11 +128,15 @@ const AdminMessages: React.FC = () => {
     const fetchMessages = async () => {
         if (!selectedProject) return;
 
+        const currentProject = projects.find(p => p.id === selectedProject);
+        const column = currentProject?.request_id ? 'request_id' : 'project_id';
+        const idToQuery = currentProject?.request_id || selectedProject;
+
         try {
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
-                .eq('project_id', selectedProject)
+                .eq(column, idToQuery)
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
@@ -115,17 +149,25 @@ const AdminMessages: React.FC = () => {
     const handleSend = async () => {
         if (!inputText.trim() || !selectedProject || !supabaseUser) return;
 
+        const currentProject = projects.find(p => p.id === selectedProject);
+        const messageData: any = {
+            sender_id: supabaseUser.id,
+            sender_type: 'admin',
+            message_text: inputText.trim(),
+            read: false
+        };
+
+        if (currentProject?.request_id) {
+            messageData.request_id = currentProject.request_id;
+        } else {
+            messageData.project_id = selectedProject;
+        }
+
         setLoading(true);
         try {
             const { error } = await supabase
                 .from('messages')
-                .insert({
-                    project_id: selectedProject,
-                    sender_id: supabaseUser.id,
-                    sender_type: 'admin',
-                    message_text: inputText.trim(),
-                    read: false
-                });
+                .insert(messageData);
 
             if (error) throw error;
 
@@ -173,8 +215,8 @@ const AdminMessages: React.FC = () => {
                             key={project.id}
                             onClick={() => setSelectedProject(project.id)}
                             className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors border-l-4 ${selectedProject === project.id
-                                    ? 'bg-white border-blue-600 shadow-sm'
-                                    : 'border-transparent'
+                                ? 'bg-white border-blue-600 shadow-sm'
+                                : 'border-transparent'
                                 }`}
                         >
                             <div className="flex justify-between items-start mb-1">
@@ -219,8 +261,8 @@ const AdminMessages: React.FC = () => {
                             >
                                 <div
                                     className={`max-w-[70%] p-4 rounded-2xl shadow-sm text-sm ${msg.sender_type === 'admin'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                                        ? 'bg-blue-600 text-white rounded-tr-none'
+                                        : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
                                         }`}
                                 >
                                     {msg.message_text}
