@@ -1,12 +1,8 @@
 -- ============================================
 -- COMPLETE DATABASE SETUP FOR CUSTOM ORDERS
--- Run this ONCE in Supabase SQL Editor
+-- Run this in Supabase SQL Editor
+-- Handles existing objects gracefully
 -- ============================================
-
--- This script does everything needed in the correct order:
--- 1. Creates custom_orders table
--- 2. Fixes custom_requests table
--- 3. Sets up all constraints and policies
 
 -- ============================================
 -- PART 1: Create custom_orders table
@@ -33,7 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_custom_orders_request_id ON public.custom_orders(
 CREATE INDEX IF NOT EXISTS idx_custom_orders_status ON public.custom_orders(status);
 CREATE INDEX IF NOT EXISTS idx_custom_orders_created_at ON public.custom_orders(created_at DESC);
 
--- Updated_at trigger
+-- Updated_at trigger function
 CREATE OR REPLACE FUNCTION public.update_custom_orders_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -42,6 +38,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop trigger if exists, then create
+DROP TRIGGER IF EXISTS update_custom_orders_updated_at ON public.custom_orders;
 CREATE TRIGGER update_custom_orders_updated_at
     BEFORE UPDATE ON public.custom_orders
     FOR EACH ROW
@@ -49,6 +47,13 @@ CREATE TRIGGER update_custom_orders_updated_at
 
 -- Enable RLS
 ALTER TABLE public.custom_orders ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Clients can view own custom orders" ON public.custom_orders;
+DROP POLICY IF EXISTS "Admins can view all custom orders" ON public.custom_orders;
+DROP POLICY IF EXISTS "Clients can insert own custom orders" ON public.custom_orders;
+DROP POLICY IF EXISTS "Admins can insert custom orders" ON public.custom_orders;
+DROP POLICY IF EXISTS "Admins can update custom orders" ON public.custom_orders;
 
 -- RLS Policies
 CREATE POLICY "Clients can view own custom orders"
@@ -80,12 +85,29 @@ ALTER TABLE public.custom_requests
 DROP CONSTRAINT IF EXISTS custom_requests_converted_project_id_fkey;
 
 -- Make converted_project_id nullable
-ALTER TABLE public.custom_requests 
-ALTER COLUMN converted_project_id DROP NOT NULL;
+DO $$ 
+BEGIN
+    ALTER TABLE public.custom_requests 
+    ALTER COLUMN converted_project_id DROP NOT NULL;
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END $$;
 
 -- Add new column for custom_order_id
 ALTER TABLE public.custom_requests
-ADD COLUMN IF NOT EXISTS custom_order_id uuid REFERENCES public.custom_orders(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS custom_order_id uuid;
+
+-- Add foreign key constraint
+DO $$
+BEGIN
+    ALTER TABLE public.custom_requests
+    ADD CONSTRAINT custom_requests_custom_order_id_fkey
+    FOREIGN KEY (custom_order_id) 
+    REFERENCES public.custom_orders(id) 
+    ON DELETE SET NULL;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Create index
 CREATE INDEX IF NOT EXISTS idx_custom_requests_custom_order_id ON public.custom_requests(custom_order_id);
@@ -99,18 +121,20 @@ ADD COLUMN IF NOT EXISTS approved_price DECIMAL(10,2);
 -- ============================================
 
 -- Check custom_orders table
-SELECT 'custom_orders table created' AS status,
+SELECT 'custom_orders table' AS object,
        COUNT(*) AS column_count
 FROM information_schema.columns
 WHERE table_name = 'custom_orders';
 
 -- Check custom_requests updates
-SELECT column_name, is_nullable, data_type
+SELECT 'custom_requests columns' AS object,
+       column_name, 
+       is_nullable, 
+       data_type
 FROM information_schema.columns
 WHERE table_name = 'custom_requests' 
 AND column_name IN ('custom_order_id', 'approved_price', 'converted_project_id')
 ORDER BY column_name;
 
 -- Success message
-SELECT '✅ Database setup complete!' AS message,
-       'You can now test the payment flow' AS next_step;
+SELECT '✅ Database setup complete!' AS status;
