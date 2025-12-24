@@ -16,6 +16,7 @@ interface CustomRequest {
     status: 'pending' | 'reviewing' | 'approved' | 'rejected' | 'converted';
     created_at: string;
     converted_project_id: string | null;
+    approved_price: number | null;
 }
 
 const ClientRequests: React.FC = () => {
@@ -173,6 +174,12 @@ const ClientRequests: React.FC = () => {
                                 <span className="text-slate-500">Timeline:</span>
                                 <p className="font-medium text-slate-900">{request.timeline || 'Not specified'}</p>
                             </div>
+                            {request.approved_price && (
+                                <div>
+                                    <span className="text-slate-500">Approved Price:</span>
+                                    <p className="font-medium text-green-600">${request.approved_price.toLocaleString()}</p>
+                                </div>
+                            )}
                             {request.converted_project_id && (
                                 <div>
                                     <span className="text-slate-500">Status:</span>
@@ -182,12 +189,27 @@ const ClientRequests: React.FC = () => {
                         </div>
 
                         <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
-                            <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                                <Eye size={18} /> View Details
-                            </button>
-                            <button className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
-                                <MessageSquare size={18} /> Message Admin
-                            </button>
+                            {request.status === 'approved' && request.approved_price ? (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        // TODO: Trigger payment flow
+                                        alert('Payment flow coming soon!');
+                                    }}
+                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 animate-pulse"
+                                >
+                                    💳 Pay ${request.approved_price.toLocaleString()} Now
+                                </button>
+                            ) : (
+                                <>
+                                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                        <Eye size={18} /> View Details
+                                    </button>
+                                    <button className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
+                                        <MessageSquare size={18} /> Message Admin
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 ))}

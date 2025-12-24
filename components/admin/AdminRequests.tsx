@@ -28,6 +28,7 @@ const AdminRequests: React.FC = () => {
     const [showConvertModal, setShowConvertModal] = useState(false);
     const [converting, setConverting] = useState(false);
     const [modalTab, setModalTab] = useState<'details' | 'messages'>('details');
+    const [convertPrice, setConvertPrice] = useState<string>('');
 
     useEffect(() => {
         fetchRequests();
@@ -94,89 +95,38 @@ const AdminRequests: React.FC = () => {
     };
 
     const convertToProject = async () => {
-        if (!selectedRequest) return;
+        if (!selectedRequest || !convertPrice) {
+            alert('Please enter a price for this project');
+            return;
+        }
+
+        const priceNum = parseFloat(convertPrice);
+        if (isNaN(priceNum) || priceNum <= 0) {
+            alert('Please enter a valid price');
+            return;
+        }
 
         setConverting(true);
         try {
-            // 1. Get or create client record
-            let clientId: string | null = null;
-
-            if (selectedRequest.user_id) {
-                const { data: existingClient } = await supabase
-                    .from('clients')
-                    .select('id')
-                    .eq('user_id', selectedRequest.user_id)
-                    .single();
-
-                if (existingClient) {
-                    clientId = existingClient.id;
-                } else {
-                    // Create client record
-                    const { data: newClient, error: clientError } = await supabase
-                        .from('clients')
-                        .insert({ user_id: selectedRequest.user_id })
-                        .select()
-                        .single();
-
-                    if (clientError) throw clientError;
-                    clientId = newClient.id;
-                }
-            }
-
-            if (!clientId) {
-                alert('Cannot convert: No user account linked to this request');
-                return;
-            }
-
-            // 2. Extract budget amount
-            const budgetMap: { [key: string]: number } = {
-                '< $5k': 2500,
-                '$5k - $10k': 7500,
-                '$10k - $25k': 17500,
-                '$25k+': 30000
-            };
-            const amount = budgetMap[selectedRequest.budget || ''] || 10000;
-
-            // 3. Create project
-            const { data: project, error: projectError } = await supabase
-                .from('projects')
-                .insert({
-                    client_id: clientId,
-                    title: `${getCategoryLabel(selectedRequest.category)} Project`,
-                    description: selectedRequest.details || `${getCategoryLabel(selectedRequest.category)} project for ${selectedRequest.name}`,
-                    amount: amount,
-                    status: 'pending'
-                })
-                .select()
-                .single();
-
-            if (projectError) throw projectError;
-
-            // 4. Update request status and link to project
+            // Update request to approved status with price
+            // Client will see this and can proceed to payment
             const { error: updateError } = await supabase
                 .from('custom_requests')
                 .update({
-                    status: 'converted',
-                    converted_project_id: project.id
+                    status: 'approved',
+                    approved_price: priceNum
                 })
                 .eq('id', selectedRequest.id);
 
             if (updateError) throw updateError;
 
-            // 5. Update local state
-            setRequests(requests.map(r =>
-                r.id === selectedRequest.id
-                    ? { ...r, status: 'converted' as const }
-                    : r
-            ));
-
+            alert('Request approved! Client can now proceed with payment.');
             setShowConvertModal(false);
-            setSelectedRequest(null);
-            alert(`Successfully converted to project! Project ID: ${project.id}`);
-
+            setConvertPrice('');
+            fetchRequests();
         } catch (error: any) {
-            console.error('Error converting to project:', error);
-            alert(`Failed to convert: ${error.message || 'Unknown error'}`);
+            console.error('Error approving request:', error);
+            alert('Failed to approve request: ' + error.message);
         } finally {
             setConverting(false);
         }
@@ -462,19 +412,19 @@ const AdminRequests: React.FC = () => {
                             <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Rocket size={32} className="text-purple-600" />
                             </div>
-                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Convert to Project?</h3>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Approve & Set Price</h3>
                             <p className="text-slate-600">
-                                This will create a new project for <strong>{selectedRequest.name}</strong> and mark this request as converted.
+                                Set the project price for <strong>{selectedRequest.name}</strong>. They'll be able to pay and start the project.
                             </p>
                         </div>
 
-                        <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2 text-sm">
+                        <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-slate-600">Category:</span>
                                 <span className="font-medium text-slate-900">{getCategoryLabel(selectedRequest.category)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-600">Budget:</span>
+                                <span className="text-slate-600">Requested Budget:</span>
                                 <span className="font-medium text-slate-900">{selectedRequest.budget}</span>
                             </div>
                             <div className="flex justify-between">
@@ -483,19 +433,39 @@ const AdminRequests: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Price Input */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-bold text-slate-700 mb-2">
+                                Project Price (USD) *
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">$</span>
+                                <input
+                                    type="number"
+                                    value={convertPrice}
+                                    onChange={(e) => setConvertPrice(e.target.value)}
+                                    placeholder="10000"
+                                    className="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-lg font-bold"
+                                    min="0"
+                                    step="100"
+                                />
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">Client will pay this amount to start the project</p>
+                        </div>
+
                         <div className="flex gap-3">
                             <button
-                                onClick={() => setShowConvertModal(false)}
+                                onClick={() => { setShowConvertModal(false); setConvertPrice(''); }}
                                 className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={convertToProject}
-                                disabled={converting}
+                                disabled={converting || !convertPrice}
                                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {converting ? 'Converting...' : 'Convert Now'}
+                                {converting ? 'Approving...' : 'Approve & Set Price'}
                             </button>
                         </div>
                     </div>
