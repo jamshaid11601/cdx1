@@ -87,7 +87,7 @@ const ClientRequests: React.FC = () => {
                 .from('projects')
                 .insert({
                     client_id: clientId,
-                    service_id: null, // Custom requests don't have a service_id
+                    service_id: '00000000-0000-0000-0000-000000000001', // Placeholder service for custom requests
                     title: `${getCategoryLabel(requestToPay.category)} Project`,
                     description: requestToPay.details || `${getCategoryLabel(requestToPay.category)} project`,
                     amount: requestToPay.approved_price,
