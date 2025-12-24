@@ -34,10 +34,20 @@ export default function App() {
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
+  // Projects State
+  const [projects, setProjects] = useState<any[]>([]);
+
   // Fetch services from Supabase
   useEffect(() => {
     fetchServices();
   }, []);
+
+  // Fetch user projects when user changes
+  useEffect(() => {
+    if (user) {
+      fetchUserProjects();
+    }
+  }, [user]);
 
   const fetchServices = async () => {
     try {
@@ -68,6 +78,52 @@ export default function App() {
     }
   };
 
+  const fetchUserProjects = async () => {
+    try {
+      // First get client record
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user!.id)
+        .single();
+
+      if (clientError) {
+        console.error('Error fetching client:', clientError);
+        return;
+      }
+
+      if (!clientData) return;
+
+      // Fetch projects for this client
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          services (id, title, category, image_url)
+        `)
+        .eq('client_id', clientData.id)
+        .order('created_at', { ascending: false });
+
+      if (projectsError) throw projectsError;
+
+      // Transform to match Order interface
+      const transformedProjects = (projectsData || []).map(project => ({
+        id: project.id,
+        gigId: project.service_id,
+        client: user!.full_name || user!.email,
+        amount: Number(project.amount),
+        status: project.status as any,
+        date: new Date(project.created_at).toLocaleDateString(),
+        title: project.title,
+        description: project.description
+      }));
+
+      setProjects(transformedProjects);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -89,6 +145,7 @@ export default function App() {
   const handleCheckoutSuccess = () => {
     setIsCheckoutOpen(false);
     setSelectedGig(null);
+    fetchUserProjects(); // Refresh projects
     setPage('dashboard');
   };
 
@@ -119,7 +176,7 @@ export default function App() {
     return (
       <ClientDashboard
         user={{ role: 'client', name: user.full_name || user.email, email: user.email }}
-        orders={[]}
+        orders={projects}
         gigs={services}
         messages={[]}
         onSendMessage={() => { }}
