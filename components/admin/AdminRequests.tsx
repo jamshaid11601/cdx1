@@ -112,6 +112,18 @@ const AdminRequests: React.FC = () => {
         return icons[category] || '📋';
     };
 
+    const getCategoryLabel = (category: string) => {
+        const labels: { [key: string]: string } = {
+            web: 'Web Platform',
+            mobile: 'Mobile App',
+            ai: 'AI Solution',
+            design: 'Product Design',
+            devops: 'DevOps & Cloud',
+            consult: 'Consulting'
+        };
+        return labels[category] || category;
+    };
+
     const statusCounts = {
         all: requests.length,
         pending: requests.filter(r => r.status === 'pending').length,
@@ -145,8 +157,8 @@ const AdminRequests: React.FC = () => {
                             key={tab.id}
                             onClick={() => setStatusFilter(tab.id)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === tab.id
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                 }`}
                         >
                             {tab.label} ({statusCounts[tab.id as keyof typeof statusCounts]})
@@ -197,7 +209,7 @@ const AdminRequests: React.FC = () => {
                                 <div className="grid grid-cols-3 gap-4 text-sm mb-3">
                                     <div>
                                         <span className="text-slate-500">Category:</span>
-                                        <p className="font-medium text-slate-900 capitalize">{request.category}</p>
+                                        <p className="font-medium text-slate-900">{getCategoryLabel(request.category)}</p>
                                     </div>
                                     <div>
                                         <span className="text-slate-500">Budget:</span>
@@ -249,7 +261,7 @@ const AdminRequests: React.FC = () => {
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className="text-sm font-bold text-slate-700">Category</label>
-                                <p className="text-slate-900 capitalize">{getCategoryIcon(selectedRequest.category)} {selectedRequest.category}</p>
+                                <p className="text-slate-900">{getCategoryIcon(selectedRequest.category)} {getCategoryLabel(selectedRequest.category)}</p>
                             </div>
 
                             <div>

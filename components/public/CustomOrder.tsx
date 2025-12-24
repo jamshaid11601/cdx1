@@ -45,13 +45,63 @@ const CustomOrder: React.FC = () => {
     }
   };
 
+  const generatePassword = () => {
+    const length = 12;
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    return password;
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      let userId = supabaseUser?.id || null;
+
+      // If user is not logged in, check if account exists or create new one
+      if (!supabaseUser) {
+        // Check if user with this email already exists
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', formData.email)
+          .single();
+
+        if (existingUser) {
+          userId = existingUser.id;
+        } else {
+          // Create new account
+          const password = generatePassword();
+
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: formData.email,
+            password: password,
+            options: {
+              data: {
+                full_name: formData.name
+              },
+              emailRedirectTo: window.location.origin + '/dashboard'
+            }
+          });
+
+          if (authError) {
+            console.error('Error creating account:', authError);
+            // Continue anyway - we'll create request without user_id
+          } else if (authData.user) {
+            userId = authData.user.id;
+            console.log('Account created successfully for:', formData.email);
+            // Note: Supabase will send verification email automatically
+          }
+        }
+      }
+
+      // Create custom request
       const { data, error } = await supabase
         .from('custom_requests')
         .insert({
-          user_id: supabaseUser?.id || null,
+          user_id: userId,
           category: formData.category,
           name: formData.name,
           email: formData.email,
@@ -321,12 +371,22 @@ const CustomOrder: React.FC = () => {
                     <CheckCircle2 size={48} className="text-green-600" />
                   </div>
                   <h2 className="text-3xl font-bold text-slate-900 mb-4">Request Submitted!</h2>
-                  <p className="text-slate-600 mb-8 leading-relaxed">
+                  <p className="text-slate-600 mb-6 leading-relaxed">
                     Thank you for reaching out! Our solution architect <strong>Sarah Jenkins</strong> will review your requirements and send a detailed proposal within <strong>24 hours</strong>.
                   </p>
+                  {!supabaseUser && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                      <p className="text-sm text-green-900 font-medium mb-2">
+                        🎉 Account Created!
+                      </p>
+                      <p className="text-xs text-green-800">
+                        We've created an account for you. Check your email for login instructions to track your request.
+                      </p>
+                    </div>
+                  )}
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                     <p className="text-sm text-blue-900 font-medium">
-                      📧 Confirmation sent to your email
+                      📧 Confirmation sent to {formData.email}
                     </p>
                   </div>
                   <button
