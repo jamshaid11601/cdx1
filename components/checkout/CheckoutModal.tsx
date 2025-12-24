@@ -97,19 +97,25 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
         throw new Error('Please sign in to complete purchase');
       }
 
-      // Create project record
-      const { error: projectError } = await supabase
-        .from('projects')
-        .insert({
-          client_id: clientId,
-          service_id: gig.id,
-          title: gig.title,
-          description: gig.description,
-          amount: gig.price,
-          status: 'pending'
-        });
+      // Check if this is a custom request (title contains "Custom Project")
+      const isCustomRequest = gig.title.includes('Custom Project');
 
-      if (projectError) throw projectError;
+      // Only create project for regular gig purchases, not custom requests
+      if (!isCustomRequest) {
+        // Create project record for regular gigs
+        const { error: projectError } = await supabase
+          .from('projects')
+          .insert({
+            client_id: clientId,
+            service_id: gig.id,
+            title: gig.title,
+            description: gig.description,
+            amount: gig.price,
+            status: 'pending'
+          });
+
+        if (projectError) throw projectError;
+      }
 
       setStep('success');
 
