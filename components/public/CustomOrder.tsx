@@ -4,10 +4,14 @@ import {
   Globe, Smartphone, Cpu, Palette, Layout, Server,
   User, Mail, FileText, DollarSign, Calendar, Upload, X
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CustomOrder: React.FC = () => {
+  const { supabaseUser } = useAuth();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     category: '',
     name: '',
@@ -38,6 +42,41 @@ const CustomOrder: React.FC = () => {
         return;
       }
       setFormData({ ...formData, attachmentName: file.name });
+    }
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('custom_requests')
+        .insert({
+          user_id: supabaseUser?.id || null,
+          category: formData.category,
+          name: formData.name,
+          email: formData.email,
+          details: formData.details,
+          budget: formData.budget,
+          timeline: formData.timeline,
+          attachment_name: formData.attachmentName || null,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error submitting request:', error);
+        alert('Failed to submit request. Please try again.');
+        return;
+      }
+
+      console.log('Request submitted successfully:', data);
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -264,10 +303,11 @@ const CustomOrder: React.FC = () => {
                 <div className="mt-auto pt-8 flex justify-between">
                   <button onClick={handleBack} className="text-slate-500 font-bold hover:text-slate-900 flex items-center gap-2"><ArrowLeft size={18} /> Back</button>
                   <button
-                    onClick={() => setSubmitted(true)}
-                    className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold flex items-center gap-2 hover:bg-blue-700 hover:scale-105 shadow-lg shadow-blue-600/20 transition-all"
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="px-8 py-3 bg-blue-600 text-white rounded-full font-bold flex items-center gap-2 hover:bg-blue-700 hover:scale-105 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit Request <CheckCircle2 size={18} />
+                    {loading ? 'Submitting...' : 'Submit Request'} <CheckCircle2 size={18} />
                   </button>
                 </div>
               </div>

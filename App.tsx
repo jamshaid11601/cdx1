@@ -26,6 +26,7 @@ import AdminKanban from './components/admin/AdminKanban';
 import AdminServices from './components/admin/AdminServices';
 import AdminMessages from './components/admin/AdminMessages';
 import AdminFinance from './components/admin/AdminFinance';
+import AdminRequests from './components/admin/AdminRequests';
 
 export default function App() {
   const { user, loading, signOut } = useAuth();
@@ -212,6 +213,7 @@ export default function App() {
       <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onLogout={handleLogout}>
         {adminTab === 'dashboard' && <AdminDashboardHome orders={allProjects} />}
         {adminTab === 'orders' && <AdminKanban orders={allProjects} setOrders={setAllProjects} />}
+        {adminTab === 'requests' && <AdminRequests />}
         {adminTab === 'services' && <AdminServices gigs={services} setGigs={setServices} />}
         {adminTab === 'messages' && <AdminMessages />}
         {adminTab === 'finance' && <AdminFinance orders={allProjects} />}

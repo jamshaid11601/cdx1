@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Briefcase, Database, DollarSign, Monitor, LogOut, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Database, DollarSign, Monitor, LogOut, MessageSquare, FileText } from 'lucide-react';
 
-export type AdminTab = 'dashboard' | 'orders' | 'services' | 'finance' | 'messages';
+export type AdminTab = 'dashboard' | 'orders' | 'services' | 'finance' | 'messages' | 'requests';
 
 interface AdminLayoutProps {
   activeTab: AdminTab;
@@ -14,6 +14,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ activeTab, setActiveTab, onLo
   const menu = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'orders', label: 'Order Kanban', icon: <Briefcase size={20} /> },
+    { id: 'requests', label: 'Custom Requests', icon: <FileText size={20} /> },
     { id: 'services', label: 'Services CMS', icon: <Database size={20} /> },
     { id: 'messages', label: 'Message Center', icon: <MessageSquare size={20} /> },
     { id: 'finance', label: 'Finance', icon: <DollarSign size={20} /> },
@@ -45,8 +46,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ activeTab, setActiveTab, onLo
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
               <div className="text-right hidden sm:block">
-                  <div className="text-sm font-bold text-slate-900">Administrator</div>
-                  <div className="text-xs text-slate-500">Super User</div>
+                <div className="text-sm font-bold text-slate-900">Administrator</div>
+                <div className="text-xs text-slate-500">Super User</div>
               </div>
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">A</div>
             </div>
