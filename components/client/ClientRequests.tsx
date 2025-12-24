@@ -82,28 +82,29 @@ const ClientRequests: React.FC = () => {
                 clientId = newClient.id;
             }
 
-            // Create project from the custom request
-            // Note: service_id is omitted - it will be NULL for custom requests
-            const { data: project, error: projectError } = await supabase
-                .from('projects')
+            // Create custom order from the request
+            const { data: customOrder, error: orderError } = await supabase
+                .from('custom_orders')
                 .insert({
                     client_id: clientId,
+                    request_id: requestToPay.id,
                     title: `${getCategoryLabel(requestToPay.category)} Project`,
                     description: requestToPay.details || `${getCategoryLabel(requestToPay.category)} project`,
                     amount: requestToPay.approved_price,
-                    status: 'pending'
+                    status: 'pending',
+                    payment_status: 'paid'
                 })
                 .select()
                 .single();
 
-            if (projectError) throw projectError;
+            if (orderError) throw orderError;
 
             // Update request to converted status
             const { error: updateError } = await supabase
                 .from('custom_requests')
                 .update({
                     status: 'converted',
-                    converted_project_id: project.id
+                    converted_project_id: customOrder.id
                 })
                 .eq('id', requestToPay.id);
 
@@ -113,10 +114,10 @@ const ClientRequests: React.FC = () => {
             setIsCheckoutOpen(false);
             setRequestToPay(null);
             fetchRequests();
-            alert('Payment successful! Your project has been created.');
+            alert('Payment successful! Your custom order has been created.');
         } catch (error: any) {
             console.error('Error processing payment:', error);
-            alert('Payment successful but project creation failed: ' + error.message);
+            alert('Payment successful but order creation failed: ' + error.message);
         }
     };
 
