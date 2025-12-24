@@ -324,6 +324,21 @@ const AdminRequests: React.FC = () => {
                         {/* Tab Content */}
                         {modalTab === 'details' ? (
                             <div className="p-6 space-y-4 overflow-y-auto">
+                                {/* Contact Information */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                    <label className="text-sm font-bold text-blue-900 mb-2 block">Contact Information</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <span className="text-xs text-blue-700">Name:</span>
+                                            <p className="font-bold text-blue-900">{selectedRequest.name}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-blue-700">Email:</span>
+                                            <p className="font-bold text-blue-900">{selectedRequest.email}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label className="text-sm font-bold text-slate-700">Category</label>
                                     <p className="text-slate-900">{getCategoryIcon(selectedRequest.category)} {getCategoryLabel(selectedRequest.category)}</p>
