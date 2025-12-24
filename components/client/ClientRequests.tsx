@@ -83,11 +83,11 @@ const ClientRequests: React.FC = () => {
             }
 
             // Create project from the custom request
+            // Note: service_id is omitted - it will be NULL for custom requests
             const { data: project, error: projectError } = await supabase
                 .from('projects')
                 .insert({
                     client_id: clientId,
-                    service_id: '00000000-0000-0000-0000-000000000001', // Placeholder service for custom requests
                     title: `${getCategoryLabel(requestToPay.category)} Project`,
                     description: requestToPay.details || `${getCategoryLabel(requestToPay.category)} project`,
                     amount: requestToPay.approved_price,
