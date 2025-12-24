@@ -9,6 +9,7 @@ import {
 import { Order, User, Gig, Message, OrderStatus } from '../../types';
 import Marketplace from '../public/Marketplace';
 import ClientMessages from './ClientMessages';
+import ClientRequests from './ClientRequests';
 
 interface ClientDashboardProps {
     user: User;
@@ -21,7 +22,7 @@ interface ClientDashboardProps {
     onBuy: (gig: Gig) => void;
 }
 
-type Tab = 'dashboard' | 'browse' | 'projects' | 'messages' | 'files' | 'settings';
+type Tab = 'dashboard' | 'browse' | 'projects' | 'messages' | 'custom-requests' | 'files' | 'settings';
 
 const STAGES: { id: OrderStatus; label: string; desc: string }[] = [
     { id: 'pending', label: 'Pending', desc: 'Order placed, awaiting assignment.' },
@@ -311,6 +312,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                         { id: 'browse', label: 'Browse Services', icon: <ShoppingBag size={20} /> },
                         { id: 'projects', label: 'My Projects', icon: <Folder size={20} /> },
                         { id: 'messages', label: 'Messages', icon: <MessageSquare size={20} />, badge: messages.filter(m => !m.read && m.sender === 'admin').length },
+                        { id: 'custom-requests', label: 'Custom Requests', icon: <PlusCircle size={20} /> },
                         { id: 'files', label: 'Files & Assets', icon: <FileText size={20} /> },
                         { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
                     ].map((item) => (
@@ -359,6 +361,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                 {activeTab === 'browse' && renderBrowseView()}
                 {activeTab === 'projects' && renderProjectsView()}
                 {activeTab === 'messages' && renderMessagesView()}
+                {activeTab === 'custom-requests' && <div className="p-6 md:p-10 lg:p-12"><ClientRequests /></div>}
                 {activeTab === 'files' && renderFilesView()}
                 {activeTab === 'settings' && renderSettingsView()}
             </main>
