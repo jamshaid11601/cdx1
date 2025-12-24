@@ -3,6 +3,7 @@ import { Clock, CheckCircle, XCircle, Eye, MessageSquare, Rocket, PlusCircle } f
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestMessaging from '../shared/RequestMessaging';
+import CustomOrder from '../public/CustomOrder';
 
 interface CustomRequest {
     id: string;
@@ -23,6 +24,7 @@ const ClientRequests: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedRequest, setSelectedRequest] = useState<CustomRequest | null>(null);
     const [modalTab, setModalTab] = useState<'details' | 'messages'>('details');
+    const [showNewRequestForm, setShowNewRequestForm] = useState(false);
 
     useEffect(() => {
         if (supabaseUser) {
@@ -126,13 +128,13 @@ const ClientRequests: React.FC = () => {
                     <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Custom Requests</h1>
                     <p className="text-slate-500 mt-2">Track your custom project requests and their status</p>
                 </div>
-                <a
-                    href="/custom-order"
+                <button
+                    onClick={() => setShowNewRequestForm(true)}
                     className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-blue-600/20 flex items-center gap-2"
                 >
                     <PlusCircle size={20} />
                     New Request
-                </a>
+                </button>
             </header>
 
             <div className="grid gap-6">
@@ -270,6 +272,23 @@ const ClientRequests: React.FC = () => {
                                 <RequestMessaging requestId={selectedRequest.id} isAdmin={false} />
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* New Request Form Modal */}
+            {showNewRequestForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="relative w-full max-w-6xl my-8">
+                        <button
+                            onClick={() => setShowNewRequestForm(false)}
+                            className="absolute top-4 right-4 z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shadow-lg"
+                        >
+                            <XCircle size={24} />
+                        </button>
+                        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                            <CustomOrder />
+                        </div>
                     </div>
                 </div>
             )}
