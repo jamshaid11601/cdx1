@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical } from 'lucide-react';
+import { Search, Send, Paperclip } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -16,11 +16,10 @@ interface Message {
 interface Project {
     id: string;
     title: string;
-    client_name: string;
 }
 
-const AdminMessages: React.FC = () => {
-    const { supabaseUser } = useAuth();
+const ClientMessages: React.FC = () => {
+    const { user, supabaseUser } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
@@ -28,10 +27,12 @@ const AdminMessages: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Fetch all projects
+    // Fetch user's projects
     useEffect(() => {
-        fetchProjects();
-    }, []);
+        if (supabaseUser) {
+            fetchProjects();
+        }
+    }, [supabaseUser]);
 
     // Fetch messages when project is selected
     useEffect(() => {
@@ -39,7 +40,7 @@ const AdminMessages: React.FC = () => {
             fetchMessages();
             // Set up real-time subscription
             const subscription = supabase
-                .channel('admin_messages')
+                .channel('messages')
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
@@ -63,32 +64,25 @@ const AdminMessages: React.FC = () => {
 
     const fetchProjects = async () => {
         try {
-            const { data, error } = await supabase
+            const { data: clientData } = await supabase
+                .from('clients')
+                .select('id')
+                .eq('user_id', supabaseUser!.id)
+                .single();
+
+            if (!clientData) return;
+
+            const { data: projectsData, error } = await supabase
                 .from('projects')
-                .select(`
-          id,
-          title,
-          clients!inner (
-            id,
-            users (
-              full_name,
-              email
-            )
-          )
-        `)
+                .select('id, title')
+                .eq('client_id', clientData.id)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            const projectsWithNames = (data || []).map((p: any) => ({
-                id: p.id,
-                title: p.title,
-                client_name: p.clients?.users?.full_name || p.clients?.users?.email || 'Client'
-            }));
-
-            setProjects(projectsWithNames);
-            if (projectsWithNames.length > 0) {
-                setSelectedProject(projectsWithNames[0].id);
+            setProjects(projectsData || []);
+            if (projectsData && projectsData.length > 0) {
+                setSelectedProject(projectsData[0].id);
             }
         } catch (error) {
             console.error('Error fetching projects:', error);
@@ -122,7 +116,7 @@ const AdminMessages: React.FC = () => {
                 .insert({
                     project_id: selectedProject,
                     sender_id: supabaseUser.id,
-                    sender_type: 'admin',
+                    sender_type: 'client',
                     message_text: inputText.trim(),
                     read: false
                 });
@@ -139,74 +133,60 @@ const AdminMessages: React.FC = () => {
         }
     };
 
-    const selectedProjectData = projects.find(p => p.id === selectedProject);
-
     if (projects.length === 0) {
         return (
             <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                     <p className="text-slate-500 mb-4">No projects yet</p>
-                    <p className="text-sm text-slate-400">Projects will appear here when clients make orders</p>
+                    <p className="text-sm text-slate-400">Purchase a service to start messaging</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
-            {/* Sidebar: Client/Project List */}
-            <div className="w-80 bg-slate-50 border-r border-slate-100 flex flex-col">
-                <div className="p-6 border-b border-slate-200">
-                    <h3 className="font-bold text-slate-900 mb-4">Client Inbox</h3>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search projects..."
-                            className="w-full pl-10 pr-4 py-2 bg-white rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                        />
-                    </div>
+        <div className="animate-in fade-in slide-in-from-right-4 duration-500 h-screen flex flex-col md:flex-row bg-white overflow-hidden text-slate-900">
+            {/* Sidebar - Projects List */}
+            <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50 flex flex-col h-full">
+                <div className="p-6 border-b border-slate-200/50">
+                    <h2 className="font-bold text-slate-900 text-lg mb-4">Your Projects</h2>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {projects.map((project) => (
                         <div
                             key={project.id}
                             onClick={() => setSelectedProject(project.id)}
-                            className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors border-l-4 ${selectedProject === project.id
+                            className={`p-4 cursor-pointer transition-colors border-l-4 ${selectedProject === project.id
                                     ? 'bg-white border-blue-600 shadow-sm'
-                                    : 'border-transparent'
+                                    : 'border-transparent hover:bg-slate-100'
                                 }`}
                         >
-                            <div className="flex justify-between items-start mb-1">
-                                <span className="font-bold text-slate-900 text-sm">{project.client_name}</span>
-                                <span className="text-[10px] text-slate-400">now</span>
-                            </div>
-                            <p className="text-xs text-slate-500 truncate">{project.title}</p>
+                            <div className="font-bold text-slate-900 text-sm mb-1">{project.title}</div>
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                                Codexier Team
+                            </span>
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col bg-white">
-                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white/80 backdrop-blur-md">
+            <div className="flex-1 flex flex-col h-full bg-slate-50/30">
+                <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
-                            {selectedProjectData?.client_name.charAt(0) || 'C'}
+                            CS
                         </div>
                         <div>
-                            <div className="font-bold text-slate-900 text-sm">
-                                {selectedProjectData?.client_name || 'Client'}
+                            <div className="font-bold text-slate-900 text-sm">Codexier Support</div>
+                            <div className="flex items-center gap-1.5 text-xs text-green-600">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Online
                             </div>
-                            <div className="text-xs text-slate-500">{selectedProjectData?.title}</div>
                         </div>
                     </div>
-                    <button className="p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-colors">
-                        <MoreVertical size={20} />
-                    </button>
                 </div>
 
-                <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/50">
+                <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6">
                     {messages.length === 0 ? (
                         <div className="text-center text-slate-400 py-8">
                             <p>No messages yet. Start the conversation!</p>
@@ -215,17 +195,25 @@ const AdminMessages: React.FC = () => {
                         messages.map((msg) => (
                             <div
                                 key={msg.id}
-                                className={`flex ${msg.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}
+                                className={`flex gap-4 ${msg.sender_type === 'client' ? 'flex-row-reverse' : ''}`}
                             >
                                 <div
-                                    className={`max-w-[70%] p-4 rounded-2xl shadow-sm text-sm ${msg.sender_type === 'admin'
-                                            ? 'bg-blue-600 text-white rounded-tr-none'
-                                            : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${msg.sender_type === 'client' ? 'bg-slate-900' : 'bg-blue-600'
                                         }`}
                                 >
-                                    {msg.message_text}
+                                    {msg.sender_type === 'client' ? 'ME' : 'CS'}
+                                </div>
+                                <div className="space-y-1 max-w-[80%]">
                                     <div
-                                        className={`text-[10px] mt-1 ${msg.sender_type === 'admin' ? 'text-blue-100' : 'text-slate-400'
+                                        className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.sender_type === 'client'
+                                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                                : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none'
+                                            }`}
+                                    >
+                                        {msg.message_text}
+                                    </div>
+                                    <div
+                                        className={`text-[10px] text-slate-400 ${msg.sender_type === 'client' ? 'text-right pr-2' : 'pl-2'
                                             }`}
                                     >
                                         {new Date(msg.created_at).toLocaleTimeString([], {
@@ -244,8 +232,8 @@ const AdminMessages: React.FC = () => {
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 pr-4 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                         <input
                             type="text"
-                            placeholder="Type reply..."
-                            className="flex-1 bg-transparent border-none outline-none text-sm p-2 text-slate-900"
+                            placeholder="Type your message..."
+                            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-900 p-2"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !loading && handleSend()}
@@ -265,4 +253,4 @@ const AdminMessages: React.FC = () => {
     );
 };
 
-export default AdminMessages;
+export default ClientMessages;
