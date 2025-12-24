@@ -43,6 +43,17 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
 
+    // Selected project for messages
+    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+    // Generate professional order number from project ID
+    const generateOrderNumber = (projectId: string): string => {
+        // Extract last 4 characters of UUID and convert to number
+        const idSuffix = projectId.slice(-8);
+        const numericPart = parseInt(idSuffix, 16) % 10000;
+        return `CDX-${String(numericPart).padStart(4, '0')}`;
+    };
+
     // Handle gig purchase
     const handleBuy = (gig: Gig) => {
         console.log('ClientDashboard handleBuy called with gig:', gig);
@@ -161,7 +172,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
         </div>
     );
 
-    const renderMessagesView = () => <ClientMessages />;
+    const renderMessagesView = () => <ClientMessages selectedProjectId={selectedProjectId} />;
 
     const renderProjectsView = () => (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500 p-6 md:p-10 lg:p-12">
@@ -187,7 +198,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                                             {/* Display nice label based on status */}
                                             {STAGES.find(s => s.id === order.status)?.label || order.status}
                                         </span>
-                                        <span className="text-slate-400 text-sm font-mono">#{order.id}</span>
+                                        <span className="text-slate-400 text-sm font-mono font-bold">{generateOrderNumber(order.id)}</span>
                                     </div>
                                     <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{gigs.find(g => g.id === order.gigId)?.title || 'Custom Enterprise Project'}</h3>
                                 </div>
@@ -232,8 +243,14 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                                     <div className="w-10 h-10 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold">PM</div>
                                     <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-slate-500 text-xs font-bold">+2</div>
                                 </div>
-                                <button className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2">
-                                    View Full Timeline <ArrowRight size={16} />
+                                <button
+                                    onClick={() => {
+                                        setSelectedProjectId(order.id);
+                                        setActiveTab('messages');
+                                    }}
+                                    className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2 transition-colors"
+                                >
+                                    <MessageSquare size={16} /> Messages
                                 </button>
                             </div>
                         </div>

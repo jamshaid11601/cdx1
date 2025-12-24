@@ -18,7 +18,11 @@ interface Project {
     title: string;
 }
 
-const ClientMessages: React.FC = () => {
+interface ClientMessagesProps {
+    selectedProjectId?: string | null;
+}
+
+const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: propSelectedProjectId }) => {
     const { user, supabaseUser } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -27,12 +31,26 @@ const ClientMessages: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Generate professional order number
+    const generateOrderNumber = (projectId: string): string => {
+        const idSuffix = projectId.slice(-8);
+        const numericPart = parseInt(idSuffix, 16) % 10000;
+        return `CDX-${String(numericPart).padStart(4, '0')}`;
+    };
+
     // Fetch user's projects
     useEffect(() => {
         if (supabaseUser) {
             fetchProjects();
         }
     }, [supabaseUser]);
+
+    // Sync with prop selectedProjectId
+    useEffect(() => {
+        if (propSelectedProjectId && projects.length > 0) {
+            setSelectedProject(propSelectedProjectId);
+        }
+    }, [propSelectedProjectId, projects]);
 
     // Fetch messages when project is selected
     useEffect(() => {
@@ -157,10 +175,11 @@ const ClientMessages: React.FC = () => {
                             key={project.id}
                             onClick={() => setSelectedProject(project.id)}
                             className={`p-4 cursor-pointer transition-colors border-l-4 ${selectedProject === project.id
-                                    ? 'bg-white border-blue-600 shadow-sm'
-                                    : 'border-transparent hover:bg-slate-100'
+                                ? 'bg-white border-blue-600 shadow-sm'
+                                : 'border-transparent hover:bg-slate-100'
                                 }`}
                         >
+                            <div className="text-[10px] font-bold text-slate-400 mb-1">{generateOrderNumber(project.id)}</div>
                             <div className="font-bold text-slate-900 text-sm mb-1">{project.title}</div>
                             <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                                 Codexier Team
@@ -178,9 +197,11 @@ const ClientMessages: React.FC = () => {
                             CS
                         </div>
                         <div>
-                            <div className="font-bold text-slate-900 text-sm">Codexier Support</div>
+                            <div className="font-bold text-slate-900 text-sm">
+                                {selectedProject && generateOrderNumber(selectedProject)} - {projects.find(p => p.id === selectedProject)?.title || 'Project'}
+                            </div>
                             <div className="flex items-center gap-1.5 text-xs text-green-600">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Online
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Codexier Support
                             </div>
                         </div>
                     </div>
@@ -206,8 +227,8 @@ const ClientMessages: React.FC = () => {
                                 <div className="space-y-1 max-w-[80%]">
                                     <div
                                         className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.sender_type === 'client'
-                                                ? 'bg-blue-600 text-white rounded-tr-none'
-                                                : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none'
+                                            ? 'bg-blue-600 text-white rounded-tr-none'
+                                            : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none'
                                             }`}
                                     >
                                         {msg.message_text}
