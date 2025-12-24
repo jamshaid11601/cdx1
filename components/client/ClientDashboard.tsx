@@ -46,6 +46,20 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
     // Selected project for messages
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
+    // Project status filter
+    const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | OrderStatus>('all');
+
+    // Handle tab change events from children
+    useEffect(() => {
+        const handleTabChange = (e: any) => {
+            if (e.detail) {
+                setActiveTab(e.detail);
+            }
+        };
+        window.addEventListener('changeTab', handleTabChange);
+        return () => window.removeEventListener('changeTab', handleTabChange);
+    }, []);
+
     // Generate professional order number from project ID
     const generateOrderNumber = (projectId: string): string => {
         // Extract last 4 characters of UUID and convert to number
@@ -179,87 +193,112 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
             <header className="mb-8">
                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Projects</h1>
                 <p className="text-slate-500 mt-2">Track the live progress of your engineering requests.</p>
+
+                {/* Filter Tabs */}
+                <div className="flex flex-wrap gap-2 mt-6 bg-slate-100 p-1.5 rounded-xl self-start">
+                    {[
+                        { id: 'all', label: 'All Projects' },
+                        { id: 'pending', label: 'Pending' },
+                        { id: 'in_progress', label: 'Developing' },
+                        { id: 'review', label: 'Review' },
+                        { id: 'completed', label: 'Completed' }
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setProjectStatusFilter(tab.id as any)}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${projectStatusFilter === tab.id
+                                    ? 'bg-white text-blue-600 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
             </header>
             <div className="grid gap-8">
-                {myOrders.length > 0 ? myOrders.map(order => {
-                    const currentStageIndex = STAGES.findIndex(s => s.id === order.status);
+                {myOrders.filter(o => projectStatusFilter === 'all' || o.status === projectStatusFilter).length > 0 ?
+                    myOrders
+                        .filter(o => projectStatusFilter === 'all' || o.status === projectStatusFilter)
+                        .map(order => {
+                            const currentStageIndex = STAGES.findIndex(s => s.id === order.status);
 
-                    return (
-                        <div key={order.id} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                            {/* Header */}
-                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 border-b border-slate-100 pb-6">
-                                <div>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                            order.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                                order.status === 'review' ? 'bg-purple-100 text-purple-700' :
-                                                    'bg-orange-100 text-orange-700'
-                                            }`}>
-                                            {/* Display nice label based on status */}
-                                            {STAGES.find(s => s.id === order.status)?.label || order.status}
-                                        </span>
-                                        <span className="text-slate-400 text-sm font-mono font-bold">{generateOrderNumber(order.id)}</span>
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{order.title || gigs.find(g => g.id === order.gigId)?.title || 'Custom Enterprise Project'}</h3>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Investment</div>
-                                    <div className="text-2xl font-bold text-slate-900">${order.amount.toLocaleString()}</div>
-                                </div>
-                            </div>
-
-                            {/* Stage Stepper */}
-                            <div className="mb-8">
-                                <div className="grid grid-cols-4 gap-4 relative">
-                                    {/* Connecting Line */}
-                                    <div className="absolute top-4 left-0 w-full h-0.5 bg-slate-100 -z-10"></div>
-
-                                    {STAGES.map((stage, idx) => {
-                                        const isCompleted = idx <= currentStageIndex;
-                                        const isCurrent = idx === currentStageIndex;
-
-                                        return (
-                                            <div key={stage.id} className="flex flex-col items-center text-center">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-3 transition-all duration-500 z-10 ${isCompleted ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-400'
+                            return (
+                                <div key={order.id} className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-md transition-all">
+                                    {/* Header */}
+                                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-6 mb-8 border-b border-slate-100 pb-6">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                                    order.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                                        order.status === 'review' ? 'bg-purple-100 text-purple-700' :
+                                                            'bg-orange-100 text-orange-700'
                                                     }`}>
-                                                    {isCompleted ? <CheckCircle2 size={16} /> : <div className="w-2 h-2 rounded-full bg-slate-300"></div>}
-                                                </div>
-                                                <div className={`text-sm font-bold transition-colors ${isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
-                                                    {stage.label}
-                                                </div>
-                                                <div className="hidden md:block text-xs text-slate-400 mt-1 max-w-[120px]">
-                                                    {stage.desc}
-                                                </div>
+                                                    {/* Display nice label based on status */}
+                                                    {STAGES.find(s => s.id === order.status)?.label || order.status}
+                                                </span>
+                                                <span className="text-slate-400 text-sm font-mono font-bold">{generateOrderNumber(order.id)}</span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{order.title || gigs.find(g => g.id === order.gigId)?.title || 'Custom Enterprise Project'}</h3>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Investment</div>
+                                            <div className="text-2xl font-bold text-slate-900">${order.amount.toLocaleString()}</div>
+                                        </div>
+                                    </div>
 
-                            {/* Action Bar */}
-                            <div className="flex justify-between items-center pt-4">
-                                <div className="flex -space-x-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold">DT</div>
-                                    <div className="w-10 h-10 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold">PM</div>
-                                    <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-slate-500 text-xs font-bold">+2</div>
+                                    {/* Stage Stepper */}
+                                    <div className="mb-8">
+                                        <div className="grid grid-cols-4 gap-4 relative">
+                                            {/* Connecting Line */}
+                                            <div className="absolute top-4 left-0 w-full h-0.5 bg-slate-100 -z-10"></div>
+
+                                            {STAGES.map((stage, idx) => {
+                                                const isCompleted = idx <= currentStageIndex;
+                                                const isCurrent = idx === currentStageIndex;
+
+                                                return (
+                                                    <div key={stage.id} className="flex flex-col items-center text-center">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-3 transition-all duration-500 z-10 ${isCompleted ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-400'
+                                                            }`}>
+                                                            {isCompleted ? <CheckCircle2 size={16} /> : <div className="w-2 h-2 rounded-full bg-slate-300"></div>}
+                                                        </div>
+                                                        <div className={`text-sm font-bold transition-colors ${isCurrent ? 'text-slate-900' : 'text-slate-400'}`}>
+                                                            {stage.label}
+                                                        </div>
+                                                        <div className="hidden md:block text-xs text-slate-400 mt-1 max-w-[120px]">
+                                                            {stage.desc}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Action Bar */}
+                                    <div className="flex justify-between items-center pt-4">
+                                        <div className="flex -space-x-3">
+                                            <div className="w-10 h-10 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold">DT</div>
+                                            <div className="w-10 h-10 rounded-full bg-purple-600 border-2 border-white flex items-center justify-center text-white text-xs font-bold">PM</div>
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-slate-500 text-xs font-bold">+2</div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedProjectId(order.id);
+                                                setActiveTab('messages');
+                                            }}
+                                            className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2 transition-colors"
+                                        >
+                                            <MessageSquare size={16} /> Messages
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setSelectedProjectId(order.id);
-                                        setActiveTab('messages');
-                                    }}
-                                    className="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2 transition-colors"
-                                >
-                                    <MessageSquare size={16} /> Messages
-                                </button>
-                            </div>
+                            )
+                        }) : (
+                        <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-200">
+                            <p className="text-slate-500">No projects found.</p>
                         </div>
-                    )
-                }) : (
-                    <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-200">
-                        <p className="text-slate-500">No projects found.</p>
-                    </div>
-                )}
+                    )}
             </div>
         </div>
     );

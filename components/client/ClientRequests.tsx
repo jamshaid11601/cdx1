@@ -29,6 +29,7 @@ const ClientRequests: React.FC = () => {
     const [showNewRequestForm, setShowNewRequestForm] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [requestToPay, setRequestToPay] = useState<CustomRequest | null>(null);
+    const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'converted'>('all');
 
     useEffect(() => {
         if (supabaseUser) {
@@ -54,70 +55,32 @@ const ClientRequests: React.FC = () => {
     };
 
     const handlePayNow = (request: CustomRequest) => {
+        // Prepare gig object for checkout modal with custom request ID
+        const customGig = {
+            id: 'custom-' + request.id,
+            category: request.category,
+            title: `Custom Project: ${getCategoryLabel(request.category)}`,
+            description: request.details || '',
+            price: request.approved_price || 0,
+            image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2426&ixlib=rb-4.0.3', // Generic placeholder
+            features: [
+                'Custom Development',
+                request.timeline ? `Timeline: ${request.timeline}` : 'Flexible Timeline',
+                'Dedicated Engineering Support'
+            ],
+            status: 'active' as const,
+            custom_request_id: request.id
+        };
+
         setRequestToPay(request);
         setIsCheckoutOpen(true);
     };
 
-    const handlePaymentSuccess = async () => {
-        if (!requestToPay) return;
-
-        try {
-            // Get or create client record
-            const { data: clientData } = await supabase
-                .from('clients')
-                .select('id')
-                .eq('user_id', supabaseUser!.id)
-                .single();
-
-            let clientId = clientData?.id;
-
-            if (!clientId) {
-                const { data: newClient, error: clientError } = await supabase
-                    .from('clients')
-                    .insert({ user_id: supabaseUser!.id })
-                    .select()
-                    .single();
-
-                if (clientError) throw clientError;
-                clientId = newClient.id;
-            }
-
-            // Create custom order from the request
-            const { data: customOrder, error: orderError } = await supabase
-                .from('custom_orders')
-                .insert({
-                    client_id: clientId,
-                    request_id: requestToPay.id,
-                    title: `${getCategoryLabel(requestToPay.category)} Project`,
-                    description: requestToPay.details || `${getCategoryLabel(requestToPay.category)} project`,
-                    amount: requestToPay.approved_price,
-                    status: 'pending',
-                    payment_status: 'paid'
-                })
-                .select()
-                .single();
-
-            if (orderError) throw orderError;
-
-            // Update request to converted status with custom_order_id
-            const { error: updateError } = await supabase
-                .from('custom_requests')
-                .update({
-                    status: 'converted',
-                    custom_order_id: customOrder.id
-                })
-                .eq('id', requestToPay.id);
-
-            if (updateError) throw updateError;
-
-            // Close checkout and refresh - no alert needed, UI will update
-            setIsCheckoutOpen(false);
-            setRequestToPay(null);
-            fetchRequests();
-        } catch (error: any) {
-            console.error('Error processing payment:', error);
-            alert('Error creating order: ' + error.message);
-        }
+    const handlePaymentSuccess = () => {
+        // Redundant logic removed as CheckoutModal now handles custom_order creation
+        setIsCheckoutOpen(false);
+        setRequestToPay(null);
+        fetchRequests();
     };
 
     const getCategoryLabel = (category: string) => {
@@ -208,80 +171,142 @@ const ClientRequests: React.FC = () => {
                 </button>
             </header>
 
-            <div className="grid gap-6">
-                {requests.map((request) => (
-                    <div
-                        key={request.id}
-                        className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => setSelectedRequest(request)}
+            {/* Filter Tabs */}
+            <div className="flex gap-2 mb-8 bg-slate-100 p-1.5 rounded-xl self-start">
+                {[
+                    { id: 'all', label: 'All Requests' },
+                    { id: 'pending', label: 'Pending' },
+                    { id: 'approved', label: 'Approved' },
+                    { id: 'converted', label: 'Paid/Active' }
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setStatusFilter(tab.id as any)}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${statusFilter === tab.id
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
                     >
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="text-4xl">{getCategoryIcon(request.category)}</div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-slate-900">{getCategoryLabel(request.category)}</h3>
-                                    <p className="text-sm text-slate-500">
-                                        Submitted {new Date(request.created_at).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className={`px-4 py-2 rounded-full text-sm font-bold border flex items-center gap-2 ${getStatusColor(request.status)}`}>
-                                {getStatusIcon(request.status)}
-                                <span className="capitalize">{request.status}</span>
-                            </div>
-                        </div>
-
-                        {request.details && (
-                            <p className="text-slate-600 mb-4 line-clamp-2">{request.details}</p>
-                        )}
-
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                                <span className="text-slate-500">Budget:</span>
-                                <p className="font-medium text-slate-900">{request.budget || 'Not specified'}</p>
-                            </div>
-                            <div>
-                                <span className="text-slate-500">Timeline:</span>
-                                <p className="font-medium text-slate-900">{request.timeline || 'Not specified'}</p>
-                            </div>
-                            {request.approved_price && (
-                                <div>
-                                    <span className="text-slate-500">Approved Price:</span>
-                                    <p className="font-medium text-green-600">${request.approved_price.toLocaleString()}</p>
-                                </div>
-                            )}
-                            {request.converted_project_id && (
-                                <div>
-                                    <span className="text-slate-500">Status:</span>
-                                    <p className="font-medium text-purple-600">Converted to Project ✓</p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
-                            {request.status === 'approved' && request.approved_price ? (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handlePayNow(request);
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 animate-pulse"
-                                >
-                                    💳 Pay ${request.approved_price.toLocaleString()} Now
-                                </button>
-                            ) : (
-                                <>
-                                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                                        <Eye size={18} /> View Details
-                                    </button>
-                                    <button className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
-                                        <MessageSquare size={18} /> Message Admin
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                        {tab.label}
+                    </button>
                 ))}
+            </div>
+
+            <div className="grid gap-6">
+                {requests
+                    .filter(r => statusFilter === 'all' || r.status === statusFilter || (statusFilter === 'pending' && r.status === 'reviewing'))
+                    .map((request) => (
+                        <div
+                            key={request.id}
+                            className={`bg-white rounded-2xl border transition-all duration-300 p-6 hover:shadow-xl cursor-pointer ${request.status === 'converted'
+                                    ? 'bg-green-50/50 border-green-200 ring-1 ring-green-100'
+                                    : 'border-slate-200 shadow-sm'
+                                }`}
+                            onClick={() => setSelectedRequest(request)}
+                        >
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="text-4xl">{getCategoryIcon(request.category)}</div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900">{getCategoryLabel(request.category)}</h3>
+                                        <p className="text-sm text-slate-500">
+                                            Submitted {new Date(request.created_at).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className={`px-4 py-2 rounded-full text-sm font-bold border flex items-center gap-2 ${request.status === 'converted'
+                                        ? 'bg-green-600 text-white border-green-600'
+                                        : getStatusColor(request.status)
+                                    }`}>
+                                    {request.status === 'converted' ? <CheckCircle size={16} /> : getStatusIcon(request.status)}
+                                    <span className="capitalize">{request.status === 'converted' ? 'Paid & Active' : request.status}</span>
+                                </div>
+                            </div>
+
+                            {request.details && (
+                                <p className="text-slate-600 mb-4 line-clamp-2">{request.details}</p>
+                            )}
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <span className="text-slate-500">Budget:</span>
+                                    <p className="font-medium text-slate-900">{request.budget || 'Not specified'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-slate-500">Timeline:</span>
+                                    <p className="font-medium text-slate-900">{request.timeline || 'Not specified'}</p>
+                                </div>
+                                {request.approved_price && (
+                                    <div>
+                                        <span className="text-slate-500">Approved Price:</span>
+                                        <p className="font-medium text-green-600">${request.approved_price.toLocaleString()}</p>
+                                    </div>
+                                )}
+                                {request.converted_project_id && (
+                                    <div>
+                                        <span className="text-slate-500">Status:</span>
+                                        <p className="font-medium text-purple-600">Converted to Project ✓</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
+                                {request.status === 'converted' ? (
+                                    <>
+                                        <div className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center justify-center gap-2">
+                                            <CheckCircle size={18} /> Order Confirmed
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Dispatch custom event to change tab in parent dashboard
+                                                window.dispatchEvent(new CustomEvent('changeTab', { detail: 'projects' }));
+                                            }}
+                                            className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <Rocket size={18} /> My Project
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedRequest(request);
+                                                setModalTab('messages');
+                                            }}
+                                            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <MessageSquare size={18} /> Messages
+                                        </button>
+                                    </>
+                                ) : request.status === 'approved' && request.approved_price ? (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handlePayNow(request);
+                                        }}
+                                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 animate-pulse"
+                                    >
+                                        💳 Pay ${request.approved_price.toLocaleString()} Now
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                                            <Eye size={18} /> View Details
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedRequest(request);
+                                                setModalTab('messages');
+                                            }}
+                                            className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <MessageSquare size={18} /> Message Admin
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    ))}
             </div>
 
             {/* Request Detail Modal */}
@@ -407,7 +432,8 @@ const ClientRequests: React.FC = () => {
                         ],
                         image: '',
                         rating: 5.0,
-                        status: 'active'
+                        status: 'active',
+                        custom_request_id: requestToPay.id
                     }}
                     onSuccess={handlePaymentSuccess}
                 />

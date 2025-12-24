@@ -97,11 +97,39 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
         throw new Error('Please sign in to complete purchase');
       }
 
-      // Check if this is a custom request (title contains "Custom Project")
-      const isCustomRequest = gig.title.includes('Custom Project');
+      // Check if this is a custom request
+      const isCustomRequest = gig.title.includes('Custom Project') || !!gig.custom_request_id;
 
-      // Only create project for regular gig purchases, not custom requests
-      if (!isCustomRequest) {
+      if (isCustomRequest && gig.custom_request_id) {
+        // 1. Create custom_order record
+        const { data: newOrder, error: orderError } = await supabase
+          .from('custom_orders')
+          .insert({
+            client_id: clientId,
+            request_id: gig.custom_request_id,
+            title: gig.title,
+            description: gig.description,
+            amount: gig.price,
+            status: 'pending',
+            payment_status: 'paid'
+          })
+          .select('id')
+          .single();
+
+        if (orderError) throw orderError;
+
+        // 2. Update custom_request to 'converted' state and link the order
+        const { error: updateError } = await supabase
+          .from('custom_requests')
+          .update({
+            status: 'converted',
+            custom_order_id: newOrder.id,
+            converted_project_id: newOrder.id // Also setting this for compatibility if checked elsewhere
+          })
+          .eq('id', gig.custom_request_id);
+
+        if (updateError) throw updateError;
+      } else if (!isCustomRequest) {
         // Create project record for regular gigs
         const { error: projectError } = await supabase
           .from('projects')

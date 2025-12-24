@@ -26,6 +26,7 @@ export interface Gig {
   features: string[];
   image: string; // URL string to image source
   status: 'active' | 'inactive';
+  custom_request_id?: string;
 }
 
 export type OrderStatus = 'pending' | 'in_progress' | 'review' | 'completed';
