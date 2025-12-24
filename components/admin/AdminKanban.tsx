@@ -18,19 +18,27 @@ const AdminKanban: React.FC<AdminKanbanProps> = ({ orders, setOrders }) => {
 
   const moveOrder = async (orderId: string, newStatus: OrderStatus) => {
     try {
+      console.log('Moving order:', orderId, 'to status:', newStatus);
+
       // Update in Supabase
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('projects')
         .update({ status: newStatus })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Update successful:', data);
 
       // Update local state
       setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating project status:', error);
-      alert('Failed to update project status');
+      alert(`Failed to update project status: ${error.message || 'Unknown error'}`);
     }
   };
 
