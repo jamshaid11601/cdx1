@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, CheckCircle, XCircle, Clock, ArrowRight, Rocket } from 'lucide-react';
+import { Search, Eye, CheckCircle, XCircle, Clock, ArrowRight, Rocket, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import RequestMessaging from '../shared/RequestMessaging';
 
 interface CustomRequest {
     id: string;
@@ -26,6 +27,7 @@ const AdminRequests: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showConvertModal, setShowConvertModal] = useState(false);
     const [converting, setConverting] = useState(false);
+    const [modalTab, setModalTab] = useState<'details' | 'messages'>('details');
 
     useEffect(() => {
         fetchRequests();
@@ -332,59 +334,86 @@ const AdminRequests: React.FC = () => {
 
             {/* Request Detail Modal */}
             {selectedRequest && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedRequest(null)}>
-                    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setSelectedRequest(null); setModalTab('details'); }}>
+                    <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6 border-b border-slate-200">
                             <div className="flex items-start justify-between mb-4">
                                 <div>
                                     <h2 className="text-2xl font-bold text-slate-900">{selectedRequest.name}</h2>
                                     <p className="text-slate-500">{selectedRequest.email}</p>
                                 </div>
-                                <button onClick={() => setSelectedRequest(null)} className="text-slate-400 hover:text-slate-600">
+                                <button onClick={() => { setSelectedRequest(null); setModalTab('details'); }} className="text-slate-400 hover:text-slate-600">
                                     <XCircle size={24} />
                                 </button>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(selectedRequest.status)}`}>
-                                {selectedRequest.status}
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(selectedRequest.status)}`}>
+                                    {selectedRequest.status}
+                                </span>
+                                {/* Tabs */}
+                                <div className="flex gap-2 ml-auto">
+                                    <button
+                                        onClick={() => setModalTab('details')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${modalTab === 'details' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                    >
+                                        <Eye size={16} className="inline mr-2" />
+                                        Details
+                                    </button>
+                                    <button
+                                        onClick={() => setModalTab('messages')}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${modalTab === 'messages' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                                    >
+                                        <MessageSquare size={16} className="inline mr-2" />
+                                        Messages
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="p-6 space-y-4">
-                            <div>
-                                <label className="text-sm font-bold text-slate-700">Category</label>
-                                <p className="text-slate-900">{getCategoryIcon(selectedRequest.category)} {getCategoryLabel(selectedRequest.category)}</p>
-                            </div>
 
-                            <div>
-                                <label className="text-sm font-bold text-slate-700">Project Details</label>
-                                <p className="text-slate-900 whitespace-pre-wrap">{selectedRequest.details || 'No details provided'}</p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
+                        {/* Tab Content */}
+                        {modalTab === 'details' ? (
+                            <div className="p-6 space-y-4 overflow-y-auto">
                                 <div>
-                                    <label className="text-sm font-bold text-slate-700">Budget</label>
-                                    <p className="text-slate-900">{selectedRequest.budget || 'Not specified'}</p>
+                                    <label className="text-sm font-bold text-slate-700">Category</label>
+                                    <p className="text-slate-900">{getCategoryIcon(selectedRequest.category)} {getCategoryLabel(selectedRequest.category)}</p>
                                 </div>
+
                                 <div>
-                                    <label className="text-sm font-bold text-slate-700">Timeline</label>
-                                    <p className="text-slate-900">{selectedRequest.timeline || 'Not specified'}</p>
+                                    <label className="text-sm font-bold text-slate-700">Project Details</label>
+                                    <p className="text-slate-900 whitespace-pre-wrap">{selectedRequest.details || 'No details provided'}</p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700">Budget</label>
+                                        <p className="text-slate-900">{selectedRequest.budget || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700">Timeline</label>
+                                        <p className="text-slate-900">{selectedRequest.timeline || 'Not specified'}</p>
+                                    </div>
+                                </div>
+
+                                {selectedRequest.attachment_name && (
+                                    <div>
+                                        <label className="text-sm font-bold text-slate-700">Attachment</label>
+                                        <p className="text-slate-900">{selectedRequest.attachment_name}</p>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="text-sm font-bold text-slate-700">Submitted</label>
+                                    <p className="text-slate-900">
+                                        {new Date(selectedRequest.created_at).toLocaleDateString()} at {new Date(selectedRequest.created_at).toLocaleTimeString()}
+                                    </p>
                                 </div>
                             </div>
-
-                            {selectedRequest.attachment_name && (
-                                <div>
-                                    <label className="text-sm font-bold text-slate-700">Attachment</label>
-                                    <p className="text-slate-900">{selectedRequest.attachment_name}</p>
-                                </div>
-                            )}
-
-                            <div>
-                                <label className="text-sm font-bold text-slate-700">Submitted</label>
-                                <p className="text-slate-900">
-                                    {new Date(selectedRequest.created_at).toLocaleDateString()} at {new Date(selectedRequest.created_at).toLocaleTimeString()}
-                                </p>
+                        ) : (
+                            <div className="flex-1 overflow-hidden p-6">
+                                <RequestMessaging requestId={selectedRequest.id} isAdmin={true} />
                             </div>
-                        </div>
+                        )}
 
                         <div className="p-6 border-t border-slate-200 space-y-3">
                             <div className="flex gap-3">
