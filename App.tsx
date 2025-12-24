@@ -22,6 +22,10 @@ import ClientDashboard from './components/client/ClientDashboard';
 // Admin Components
 import AdminLayout, { AdminTab } from './components/admin/AdminLayout';
 import AdminDashboardHome from './components/admin/AdminDashboardHome';
+import AdminKanban from './components/admin/AdminKanban';
+import AdminServices from './components/admin/AdminServices';
+import AdminMessages from './components/admin/AdminMessages';
+import AdminFinance from './components/admin/AdminFinance';
 
 export default function App() {
   const { user, loading, signOut } = useAuth();
@@ -36,6 +40,7 @@ export default function App() {
 
   // Projects State
   const [projects, setProjects] = useState<any[]>([]);
+  const [allProjects, setAllProjects] = useState<any[]>([]); // For admin
 
   // Fetch services from Supabase
   useEffect(() => {
@@ -45,7 +50,11 @@ export default function App() {
   // Fetch user projects when user changes
   useEffect(() => {
     if (user) {
-      fetchUserProjects();
+      if (user.role === 'admin') {
+        fetchAllProjects();
+      } else {
+        fetchUserProjects();
+      }
     }
   }, [user]);
 
@@ -124,6 +133,38 @@ export default function App() {
     }
   };
 
+  const fetchAllProjects = async () => {
+    try {
+      // Fetch all projects for admin
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          services (id, title, category, image_url),
+          clients!inner (id, company_name, user_id, users (email, full_name))
+        `)
+        .order('created_at', { ascending: false });
+
+      if (projectsError) throw projectsError;
+
+      // Transform to match Order interface
+      const transformedProjects = (projectsData || []).map(project => ({
+        id: project.id,
+        gigId: project.service_id,
+        client: project.clients?.users?.full_name || project.clients?.users?.email || project.clients?.company_name || 'Unknown',
+        amount: Number(project.amount),
+        status: project.status as any,
+        date: new Date(project.created_at).toLocaleDateString(),
+        title: project.title,
+        description: project.description
+      }));
+
+      setAllProjects(transformedProjects);
+    } catch (error) {
+      console.error('Error fetching all projects:', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -145,7 +186,11 @@ export default function App() {
   const handleCheckoutSuccess = () => {
     setIsCheckoutOpen(false);
     setSelectedGig(null);
-    fetchUserProjects(); // Refresh projects
+    if (user?.role === 'admin') {
+      fetchAllProjects();
+    } else {
+      fetchUserProjects();
+    }
     setPage('dashboard');
   };
 
@@ -165,8 +210,11 @@ export default function App() {
   if (user?.role === 'admin') {
     return (
       <AdminLayout activeTab={adminTab} setActiveTab={setAdminTab} onLogout={handleLogout}>
-        {adminTab === 'dashboard' && <AdminDashboardHome orders={[]} />}
-        {/* Other admin tabs can be added later */}
+        {adminTab === 'dashboard' && <AdminDashboardHome orders={allProjects} />}
+        {adminTab === 'orders' && <AdminKanban orders={allProjects} setOrders={setAllProjects} />}
+        {adminTab === 'services' && <AdminServices gigs={services} setGigs={setServices} />}
+        {adminTab === 'messages' && <AdminMessages />}
+        {adminTab === 'finance' && <AdminFinance orders={allProjects} />}
       </AdminLayout>
     );
   }
