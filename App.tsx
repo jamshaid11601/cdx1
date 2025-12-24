@@ -104,7 +104,7 @@ export default function App() {
 
       if (!clientData) return;
 
-      // Fetch projects for this client
+      // Fetch regular projects for this client
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select(`
@@ -116,7 +116,16 @@ export default function App() {
 
       if (projectsError) throw projectsError;
 
-      // Transform to match Order interface
+      // Fetch custom orders for this client
+      const { data: customOrdersData, error: customOrdersError } = await supabase
+        .from('custom_orders')
+        .select('*')
+        .eq('client_id', clientData.id)
+        .order('created_at', { ascending: false });
+
+      if (customOrdersError) throw customOrdersError;
+
+      // Transform regular projects
       const transformedProjects = (projectsData || []).map(project => ({
         id: project.id,
         gigId: project.service_id,
@@ -125,10 +134,28 @@ export default function App() {
         status: project.status as any,
         date: new Date(project.created_at).toLocaleDateString(),
         title: project.title,
-        description: project.description
+        description: project.description,
+        isCustomOrder: false
       }));
 
-      setProjects(transformedProjects);
+      // Transform custom orders
+      const transformedCustomOrders = (customOrdersData || []).map(order => ({
+        id: order.id,
+        gigId: null, // Custom orders don't have a gig/service
+        client: user!.full_name || user!.email,
+        amount: Number(order.amount),
+        status: order.status as any,
+        date: new Date(order.created_at).toLocaleDateString(),
+        title: order.title,
+        description: order.description,
+        isCustomOrder: true
+      }));
+
+      // Combine and sort by date
+      const allOrders = [...transformedProjects, ...transformedCustomOrders]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setProjects(allOrders);
     } catch (error) {
       console.error('Error fetching projects:', error);
     }
