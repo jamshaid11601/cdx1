@@ -21,6 +21,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
 
   // Customer Details State
   const [email, setEmail] = useState('');
@@ -244,48 +245,79 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
                   />
                 </div>
 
-                {/* Card Details Group */}
+                {/* Payment Method Selection */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Card Information</label>
-                  <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-all">
-                    <div className="flex items-center bg-slate-50 px-4 border-b border-slate-200">
-                      <CreditCard size={20} className="text-slate-400 mr-3" />
-                      <input
-                        type="text"
-                        placeholder="Card number"
-                        className="w-full py-4 bg-transparent outline-none placeholder:text-slate-400 font-mono text-sm"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                        maxLength={19}
-                        required
-                      />
-                    </div>
-                    <div className="flex divide-x divide-slate-200 bg-slate-50">
-                      <input
-                        type="text"
-                        placeholder="MM / YY"
-                        className="w-1/2 py-4 px-4 bg-transparent outline-none placeholder:text-slate-400 font-mono text-center text-sm"
-                        value={expiry}
-                        onChange={(e) => setExpiry(e.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2').substr(0, 5))}
-                        maxLength={5}
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="CVC"
-                        className="w-1/2 py-4 px-4 bg-transparent outline-none placeholder:text-slate-400 font-mono text-center text-sm"
-                        value={cvc}
-                        onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').substr(0, 4))}
-                        maxLength={4}
-                        required
-                      />
-                    </div>
+                  <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Payment Method</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('card')}
+                      className={`p-4 rounded-xl border-2 transition-all ${paymentMethod === 'card'
+                        ? 'border-blue-600 bg-blue-50 text-blue-900'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        }`}
+                    >
+                      <div className="font-bold text-sm">💳 Credit Card</div>
+                      <div className="text-xs mt-1">Pay with card</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('cash')}
+                      className={`p-4 rounded-xl border-2 transition-all ${paymentMethod === 'cash'
+                        ? 'border-green-600 bg-green-50 text-green-900'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        }`}
+                    >
+                      <div className="font-bold text-sm">💵 Cash</div>
+                      <div className="text-xs mt-1">Pay on delivery</div>
+                    </button>
                   </div>
                 </div>
 
+                {/* Card Details Group - Only show if card payment */}
+                {paymentMethod === 'card' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500 tracking-wider">Card Information</label>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                      <div className="flex items-center bg-slate-50 px-4 border-b border-slate-200">
+                        <CreditCard size={20} className="text-slate-400 mr-3" />
+                        <input
+                          type="text"
+                          placeholder="Card number"
+                          className="w-full py-4 bg-transparent outline-none placeholder:text-slate-400 font-mono text-sm"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                          maxLength={19}
+                          required={paymentMethod === 'card'}
+                        />
+                      </div>
+                      <div className="flex divide-x divide-slate-200 bg-slate-50">
+                        <input
+                          type="text"
+                          placeholder="MM / YY"
+                          className="w-1/2 py-4 px-4 bg-transparent outline-none placeholder:text-slate-400 font-mono text-center text-sm"
+                          value={expiry}
+                          onChange={(e) => setExpiry(e.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2').substr(0, 5))}
+                          maxLength={5}
+                          required={paymentMethod === 'card'}
+                        />
+                        <input
+                          type="text"
+                          placeholder="CVC"
+                          className="w-1/2 py-4 px-4 bg-transparent outline-none placeholder:text-slate-400 font-mono text-center text-sm"
+                          value={cvc}
+                          onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').substr(0, 4))}
+                          maxLength={4}
+                          required={paymentMethod === 'card'}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Pay Button */}
                 <button type="submit" className="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-200 flex items-center justify-center gap-2 mt-4">
-                  <Lock size={18} /> Pay ${gig.price.toFixed(2)}
+                  <Lock size={18} /> {paymentMethod === 'cash' ? `Place Order - $${gig.price.toFixed(2)}` : `Pay $${gig.price.toFixed(2)}`}
                 </button>
 
                 <div className="text-center">
