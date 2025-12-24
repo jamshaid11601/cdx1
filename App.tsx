@@ -28,6 +28,8 @@ import AdminMessages from './components/admin/AdminMessages';
 import AdminFinance from './components/admin/AdminFinance';
 import AdminRequests from './components/admin/AdminRequests';
 
+import Diagnostic from './Diagnostic';
+
 export default function App() {
   const { user, loading, signOut } = useAuth();
 
@@ -81,6 +83,43 @@ export default function App() {
       } else {
         fetchUserProjects();
       }
+
+      // Real-time subscriptions
+      const projectsChannel = supabase
+        .channel('public:projects')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'projects' },
+          (payload) => {
+            console.log('Real-time update received for projects:', payload);
+            if (user.role === 'admin') {
+              fetchAllProjects(); // Refresh admin view
+            } else {
+              fetchUserProjects(); // Refresh client view
+            }
+          }
+        )
+        .subscribe();
+
+      const customOrdersChannel = supabase
+        .channel('public:custom_orders')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'custom_orders' },
+          (payload) => {
+            console.log('Real-time update received for custom_orders:', payload);
+            if (user.role === 'client') {
+              fetchUserProjects(); // Refresh client view
+            }
+            // Add admin refresh if admin starts tracking custom orders
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(projectsChannel);
+        supabase.removeChannel(customOrdersChannel);
+      };
     }
   }, [user]);
 
@@ -262,6 +301,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
+        <Diagnostic />
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-slate-600">Loading...</p>
