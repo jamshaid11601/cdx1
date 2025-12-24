@@ -163,49 +163,51 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
           <X size={20} />
         </button>
 
-        {/* Left Side: Order Summary */}
-        <div className="w-full md:w-5/12 bg-slate-50 p-8 md:p-10 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col">
-          <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-bold">C.</div>
-            Order Summary
-          </h3>
+        {/* Left Side: Order Summary - Hidden for Custom Requests */}
+        {!gig.title.includes('Custom Project') && (
+          <div className="w-full md:w-5/12 bg-slate-50 p-8 md:p-10 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-bold">C.</div>
+              Order Summary
+            </h3>
 
-          <div className="flex-1">
-            <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
-              <img src={gig.image} alt={gig.title} className="w-full h-48 object-cover" />
+            <div className="flex-1">
+              <div className="mb-6 rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+                <img src={gig.image} alt={gig.title} className="w-full h-48 object-cover" />
+              </div>
+
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">{gig.title}</h2>
+              <p className="text-slate-500 text-sm mb-6 leading-relaxed">{gig.description}</p>
+
+              <div className="space-y-3 mb-8">
+                {gig.features.slice(0, 4).map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 text-sm text-slate-600">
+                    <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
+                    <span>{f}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{gig.title}</h2>
-            <p className="text-slate-500 text-sm mb-6 leading-relaxed">{gig.description}</p>
-
-            <div className="space-y-3 mb-8">
-              {gig.features.slice(0, 4).map((f, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-slate-600">
-                  <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
-                  <span>{f}</span>
-                </div>
-              ))}
+            <div className="border-t border-slate-200 pt-6 space-y-3">
+              <div className="flex justify-between text-slate-500 text-sm">
+                <span>Subtotal</span>
+                <span>${gig.price.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-slate-500 text-sm">
+                <span>Platform Fee</span>
+                <span>$0.00</span>
+              </div>
+              <div className="flex justify-between text-slate-900 text-xl font-bold pt-2">
+                <span>Total Due</span>
+                <span>${gig.price.toFixed(2)}</span>
+              </div>
             </div>
           </div>
-
-          <div className="border-t border-slate-200 pt-6 space-y-3">
-            <div className="flex justify-between text-slate-500 text-sm">
-              <span>Subtotal</span>
-              <span>${gig.price.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-slate-500 text-sm">
-              <span>Platform Fee</span>
-              <span>$0.00</span>
-            </div>
-            <div className="flex justify-between text-slate-900 text-xl font-bold pt-2">
-              <span>Total Due</span>
-              <span>${gig.price.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Right Side: Payment Form */}
-        <div className="w-full md:w-7/12 p-8 md:p-10 bg-white relative">
+        <div className={`${gig.title.includes('Custom Project') ? 'w-full' : 'w-full md:w-7/12'} p-8 md:p-10 bg-white relative`}>
 
           {/* STEP: Payment Form */}
           {step === 'payment' && (

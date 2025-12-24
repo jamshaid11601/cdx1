@@ -110,14 +110,13 @@ const ClientRequests: React.FC = () => {
 
             if (updateError) throw updateError;
 
-            // Close checkout and refresh
+            // Close checkout and refresh - no alert needed, UI will update
             setIsCheckoutOpen(false);
             setRequestToPay(null);
             fetchRequests();
-            alert('Payment successful! Your custom order has been created.');
         } catch (error: any) {
             console.error('Error processing payment:', error);
-            alert('Payment successful but order creation failed: ' + error.message);
+            alert('Error creating order: ' + error.message);
         }
     };
 
