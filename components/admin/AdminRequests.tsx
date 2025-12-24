@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { Search, Eye, CheckCircle, XCircle, Clock, ArrowRight, Rocket } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface CustomRequest {
@@ -24,6 +24,8 @@ const AdminRequests: React.FC = () => {
     const [selectedRequest, setSelectedRequest] = useState<CustomRequest | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [showConvertModal, setShowConvertModal] = useState(false);
+    const [converting, setConverting] = useState(false);
 
     useEffect(() => {
         fetchRequests();
@@ -86,6 +88,95 @@ const AdminRequests: React.FC = () => {
         } catch (error) {
             console.error('Error updating status:', error);
             alert('Failed to update status');
+        }
+    };
+
+    const convertToProject = async () => {
+        if (!selectedRequest) return;
+
+        setConverting(true);
+        try {
+            // 1. Get or create client record
+            let clientId: string | null = null;
+
+            if (selectedRequest.user_id) {
+                const { data: existingClient } = await supabase
+                    .from('clients')
+                    .select('id')
+                    .eq('user_id', selectedRequest.user_id)
+                    .single();
+
+                if (existingClient) {
+                    clientId = existingClient.id;
+                } else {
+                    // Create client record
+                    const { data: newClient, error: clientError } = await supabase
+                        .from('clients')
+                        .insert({ user_id: selectedRequest.user_id })
+                        .select()
+                        .single();
+
+                    if (clientError) throw clientError;
+                    clientId = newClient.id;
+                }
+            }
+
+            if (!clientId) {
+                alert('Cannot convert: No user account linked to this request');
+                return;
+            }
+
+            // 2. Extract budget amount
+            const budgetMap: { [key: string]: number } = {
+                '< $5k': 2500,
+                '$5k - $10k': 7500,
+                '$10k - $25k': 17500,
+                '$25k+': 30000
+            };
+            const amount = budgetMap[selectedRequest.budget || ''] || 10000;
+
+            // 3. Create project
+            const { data: project, error: projectError } = await supabase
+                .from('projects')
+                .insert({
+                    client_id: clientId,
+                    title: `${getCategoryLabel(selectedRequest.category)} Project`,
+                    description: selectedRequest.details || `${getCategoryLabel(selectedRequest.category)} project for ${selectedRequest.name}`,
+                    amount: amount,
+                    status: 'pending'
+                })
+                .select()
+                .single();
+
+            if (projectError) throw projectError;
+
+            // 4. Update request status and link to project
+            const { error: updateError } = await supabase
+                .from('custom_requests')
+                .update({
+                    status: 'converted',
+                    converted_project_id: project.id
+                })
+                .eq('id', selectedRequest.id);
+
+            if (updateError) throw updateError;
+
+            // 5. Update local state
+            setRequests(requests.map(r =>
+                r.id === selectedRequest.id
+                    ? { ...r, status: 'converted' as const }
+                    : r
+            ));
+
+            setShowConvertModal(false);
+            setSelectedRequest(null);
+            alert(`Successfully converted to project! Project ID: ${project.id}`);
+
+        } catch (error: any) {
+            console.error('Error converting to project:', error);
+            alert(`Failed to convert: ${error.message || 'Unknown error'}`);
+        } finally {
+            setConverting(false);
         }
     };
 
@@ -295,27 +386,87 @@ const AdminRequests: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-slate-200 flex gap-3">
+                        <div className="p-6 border-t border-slate-200 space-y-3">
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => updateRequestStatus(selectedRequest.id, 'reviewing')}
+                                    disabled={selectedRequest.status === 'reviewing'}
+                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <Clock size={18} /> Mark as Reviewing
+                                </button>
+                                <button
+                                    onClick={() => updateRequestStatus(selectedRequest.id, 'approved')}
+                                    disabled={selectedRequest.status === 'approved'}
+                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle size={18} /> Approve
+                                </button>
+                                <button
+                                    onClick={() => updateRequestStatus(selectedRequest.id, 'rejected')}
+                                    disabled={selectedRequest.status === 'rejected'}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <XCircle size={18} /> Reject
+                                </button>
+                            </div>
+                            {selectedRequest.status !== 'converted' && selectedRequest.status !== 'rejected' && (
+                                <button
+                                    onClick={() => setShowConvertModal(true)}
+                                    disabled={!selectedRequest.user_id}
+                                    className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+                                    title={!selectedRequest.user_id ? 'No user account linked to this request' : 'Convert this request to a project'}
+                                >
+                                    <Rocket size={20} /> Convert to Project
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Convert to Project Confirmation Modal */}
+            {showConvertModal && selectedRequest && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowConvertModal(false)}>
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Rocket size={32} className="text-purple-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Convert to Project?</h3>
+                            <p className="text-slate-600">
+                                This will create a new project for <strong>{selectedRequest.name}</strong> and mark this request as converted.
+                            </p>
+                        </div>
+
+                        <div className="bg-slate-50 rounded-xl p-4 mb-6 space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Category:</span>
+                                <span className="font-medium text-slate-900">{getCategoryLabel(selectedRequest.category)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Budget:</span>
+                                <span className="font-medium text-slate-900">{selectedRequest.budget}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Timeline:</span>
+                                <span className="font-medium text-slate-900">{selectedRequest.timeline}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
                             <button
-                                onClick={() => updateRequestStatus(selectedRequest.id, 'reviewing')}
-                                disabled={selectedRequest.status === 'reviewing'}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                onClick={() => setShowConvertModal(false)}
+                                className="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
                             >
-                                <Clock size={18} /> Mark as Reviewing
+                                Cancel
                             </button>
                             <button
-                                onClick={() => updateRequestStatus(selectedRequest.id, 'approved')}
-                                disabled={selectedRequest.status === 'approved'}
-                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                onClick={convertToProject}
+                                disabled={converting}
+                                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                <CheckCircle size={18} /> Approve
-                            </button>
-                            <button
-                                onClick={() => updateRequestStatus(selectedRequest.id, 'rejected')}
-                                disabled={selectedRequest.status === 'rejected'}
-                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                <XCircle size={18} /> Reject
+                                {converting ? 'Converting...' : 'Convert Now'}
                             </button>
                         </div>
                     </div>
