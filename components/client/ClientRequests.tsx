@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, Eye, MessageSquare, Rocket } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Eye, MessageSquare, Rocket, PlusCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestMessaging from '../shared/RequestMessaging';
@@ -121,9 +121,18 @@ const ClientRequests: React.FC = () => {
 
     return (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Custom Requests</h1>
-                <p className="text-slate-500 mt-2">Track your custom project requests and their status</p>
+            <header className="mb-8 flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Custom Requests</h1>
+                    <p className="text-slate-500 mt-2">Track your custom project requests and their status</p>
+                </div>
+                <a
+                    href="/custom-order"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-blue-600/20 flex items-center gap-2"
+                >
+                    <PlusCircle size={20} />
+                    New Request
+                </a>
             </header>
 
             <div className="grid gap-6">
