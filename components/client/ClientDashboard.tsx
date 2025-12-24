@@ -34,7 +34,9 @@ const STAGES: { id: OrderStatus; label: string; desc: string }[] = [
 ];
 
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, messages, onSendMessage, onLogout, onBrowse, onSuccess }) => {
-    const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+    const [activeTab, setActiveTab] = useState<Tab>(() => {
+        return (localStorage.getItem('cdx_clientActiveTab') as Tab) || 'dashboard';
+    });
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [chatInput, setChatInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,6 +50,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
 
     // Project status filter
     const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | OrderStatus>('all');
+
+    // Persist active tab
+    useEffect(() => {
+        localStorage.setItem('cdx_clientActiveTab', activeTab);
+    }, [activeTab]);
 
     // Handle tab change events from children
     useEffect(() => {
@@ -207,8 +214,8 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                             key={tab.id}
                             onClick={() => setProjectStatusFilter(tab.id as any)}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${projectStatusFilter === tab.id
-                                    ? 'bg-white text-blue-600 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
                             {tab.label}

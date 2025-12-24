@@ -30,10 +30,35 @@ import AdminRequests from './components/admin/AdminRequests';
 
 export default function App() {
   const { user, loading, signOut } = useAuth();
-  const [activePage, setPage] = useState<PageView>('home');
+
+  // Initialize state from localStorage if available
+  const [activePage, setPage] = useState<PageView>(() => {
+    return (localStorage.getItem('cdx_activePage') as PageView) || 'home';
+  });
+
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [services, setServices] = useState<Gig[]>([]);
-  const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
+
+  const [adminTab, setAdminTab] = useState<AdminTab>(() => {
+    return (localStorage.getItem('cdx_adminTab') as AdminTab) || 'dashboard';
+  });
+
+  // Persist state changes
+  useEffect(() => {
+    localStorage.setItem('cdx_activePage', activePage);
+  }, [activePage]);
+
+  useEffect(() => {
+    localStorage.setItem('cdx_adminTab', adminTab);
+  }, [adminTab]);
+
+  // Handle auth-dependent page security
+  useEffect(() => {
+    if (!loading && !user && activePage === 'dashboard') {
+      console.log('User not logged in, redirecting from dashboard to home');
+      setPage('home');
+    }
+  }, [user, loading, activePage]);
 
   // Checkout State
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null);
@@ -198,6 +223,8 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await signOut();
+      localStorage.removeItem('cdx_activePage');
+      localStorage.removeItem('cdx_adminTab');
       setPage('home');
     } catch (error) {
       console.error('Error logging out:', error);
