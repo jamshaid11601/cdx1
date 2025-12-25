@@ -43,8 +43,8 @@ const AdminKanban: React.FC<AdminKanbanProps> = ({ orders, setOrders }) => {
   };
 
   return (
-    <div className="h-full overflow-x-auto pb-4">
-      <div className="flex gap-6 min-w-[1000px]">
+    <div className="h-full overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="flex gap-6 min-w-[300px] md:min-w-[1000px] flex-col md:flex-row">
         {columns.map((col, index) => (
           <div key={col.id} className="flex-1 bg-slate-50 rounded-xl border border-slate-200 flex flex-col min-h-[500px]">
             <div className={`p-4 border-b border-slate-200 font-bold text-slate-700 border-t-4 ${col.color} rounded-t-xl bg-white`}>
