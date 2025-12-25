@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, Paperclip } from 'lucide-react';
+import { Search, Send, Paperclip, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -30,6 +30,7 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [mobileChatOpen, setMobileChatOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Generate professional order number
@@ -50,6 +51,7 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
     useEffect(() => {
         if (propSelectedProjectId && projects.length > 0) {
             setSelectedProject(propSelectedProjectId);
+            setMobileChatOpen(true); // Open chat on mobile if explicitly selected via prop
         }
     }, [propSelectedProjectId, projects]);
 
@@ -200,7 +202,7 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
     return (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500 h-screen flex flex-col md:flex-row bg-white overflow-hidden text-slate-900">
             {/* Sidebar - Projects List */}
-            <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50 flex flex-col h-full">
+            <div className={`w-full md:w-80 border-b md:border-b-0 md:border-r border-slate-100 bg-slate-50 flex flex-col h-full ${mobileChatOpen ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-6 border-b border-slate-200/50">
                     <h2 className="font-bold text-slate-900 text-lg mb-4">Your Projects</h2>
                 </div>
@@ -208,7 +210,10 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
                     {projects.map((project) => (
                         <div
                             key={project.id}
-                            onClick={() => setSelectedProject(project.id)}
+                            onClick={() => {
+                                setSelectedProject(project.id);
+                                setMobileChatOpen(true);
+                            }}
                             className={`p-4 cursor-pointer transition-colors border-l-4 ${selectedProject === project.id
                                 ? 'bg-white border-blue-600 shadow-sm'
                                 : 'border-transparent hover:bg-slate-100'
@@ -225,10 +230,16 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col h-full bg-slate-50/30">
-                <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
+            <div className={`flex-1 flex-col h-full bg-slate-50/30 ${mobileChatOpen ? 'flex' : 'hidden md:flex'}`}>
+                <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10 sticky top-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <button
+                            onClick={() => setMobileChatOpen(false)}
+                            className="p-2 -ml-2 mr-1 hover:bg-slate-100 rounded-full md:hidden text-slate-600"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                        <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-sm shrink-0">
                             CS
                         </div>
                         <div className="min-w-0 flex-1">
