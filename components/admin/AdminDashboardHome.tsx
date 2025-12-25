@@ -27,27 +27,29 @@ const AdminDashboardHome: React.FC<AdminDashboardHomeProps> = ({ orders }) => {
           </div>
         ))}
       </div>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden">
         <h3 className="text-lg font-bold text-slate-900 mb-6">Recent Orders</h3>
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-slate-500 uppercase border-b border-slate-100">
-            <tr><th className="pb-3">ID</th><th className="pb-3">Client</th><th className="pb-3">Amount</th><th className="pb-3">Status</th></tr>
-          </thead>
-          <tbody>
-            {orders.map(order => (
-              <tr key={order.id} className="border-b border-slate-50 last:border-0">
-                <td className="py-4 font-medium">{order.id}</td>
-                <td className="py-4 text-slate-600">{order.client}</td>
-                <td className="py-4 font-bold">${order.amount}</td>
-                <td className="py-4">
-                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {order.status.replace('_', ' ')}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left min-w-[600px]">
+            <thead className="text-xs text-slate-500 uppercase border-b border-slate-100">
+              <tr><th className="pb-3">ID</th><th className="pb-3">Client</th><th className="pb-3">Amount</th><th className="pb-3">Status</th></tr>
+            </thead>
+            <tbody>
+              {orders.map(order => (
+                <tr key={order.id} className="border-b border-slate-50 last:border-0">
+                  <td className="py-4 font-medium">{order.id}</td>
+                  <td className="py-4 text-slate-600">{order.client}</td>
+                  <td className="py-4 font-bold">${order.amount}</td>
+                  <td className="py-4">
+                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${order.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {order.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

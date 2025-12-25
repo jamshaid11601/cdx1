@@ -160,14 +160,14 @@ const ClientRequests: React.FC = () => {
 
     return (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <header className="mb-8 flex justify-between items-start">
+            <header className="mb-8 flex flex-col md:flex-row justify-between md:items-start gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Custom Requests</h1>
                     <p className="text-slate-500 mt-2">Track your custom project requests and their status</p>
                 </div>
                 <button
                     onClick={() => setShowNewRequestForm(true)}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-blue-600/20 flex items-center gap-2"
+                    className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-blue-600/20 flex items-center justify-center gap-2"
                 >
                     <PlusCircle size={20} />
                     New Request
@@ -175,7 +175,7 @@ const ClientRequests: React.FC = () => {
             </header>
 
             {/* Filter Tabs */}
-            <div className="flex gap-2 mb-8 bg-slate-100 p-1.5 rounded-xl self-start">
+            <div className="flex flex-wrap gap-2 mb-8 bg-slate-100 p-1.5 rounded-xl self-start">
                 {[
                     { id: 'all', label: 'All Requests' },
                     { id: 'pending', label: 'Pending' },
@@ -185,7 +185,7 @@ const ClientRequests: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setStatusFilter(tab.id as any)}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${statusFilter === tab.id
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex-1 md:flex-none ${statusFilter === tab.id
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                             }`}
