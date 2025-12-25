@@ -231,8 +231,8 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
                         <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
                             CS
                         </div>
-                        <div>
-                            <div className="font-bold text-slate-900 text-sm">
+                        <div className="min-w-0 flex-1">
+                            <div className="font-bold text-slate-900 text-sm truncate">
                                 {selectedProject && generateOrderNumber(selectedProject)} - {projects.find(p => p.id === selectedProject)?.title || 'Project'}
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-green-600">

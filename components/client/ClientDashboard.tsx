@@ -168,8 +168,8 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ user, orders, gigs, m
                         <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
                             <Loader2 size={24} className="text-blue-600 animate-spin" />
                         </div>
-                        <div>
-                            <div className="font-bold text-slate-900">{gigs.find(g => g.id === activeOrder.gigId)?.title}</div>
+                        <div className="min-w-0 flex-1">
+                            <div className="font-bold text-slate-900 truncate">{gigs.find(g => g.id === activeOrder.gigId)?.title}</div>
                             <div className="text-sm text-slate-500">Order #{activeOrder.id}</div>
                         </div>
                     </div>
