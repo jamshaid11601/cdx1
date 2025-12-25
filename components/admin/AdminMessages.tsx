@@ -236,11 +236,11 @@ const AdminMessages: React.FC = () => {
                         <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
                             {selectedProjectData?.client_name.charAt(0) || 'C'}
                         </div>
-                        <div>
-                            <div className="font-bold text-slate-900 text-sm">
+                        <div className="min-w-0 flex-1">
+                            <div className="font-bold text-slate-900 text-sm truncate">
                                 {selectedProjectData?.client_name || 'Client'}
                             </div>
-                            <div className="text-xs text-slate-500">{selectedProjectData?.title}</div>
+                            <div className="text-xs text-slate-500 truncate">{selectedProjectData?.title}</div>
                         </div>
                     </div>
                     <button className="p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-colors">
