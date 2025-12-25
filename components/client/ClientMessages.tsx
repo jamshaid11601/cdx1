@@ -284,12 +284,12 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 bg-white border-t border-slate-100">
-                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 pr-4 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div className="p-3 md:p-4 bg-white border-t border-slate-100">
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 pr-2 md:pr-4 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                         <input
                             type="text"
-                            placeholder="Type your message..."
-                            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-900 p-2"
+                            placeholder="Type a message..."
+                            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-900 p-2 min-w-0"
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !loading && handleSend()}
@@ -298,7 +298,7 @@ const ClientMessages: React.FC<ClientMessagesProps> = ({ selectedProjectId: prop
                         <button
                             onClick={handleSend}
                             disabled={loading || !inputText.trim()}
-                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="shrink-0 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         >
                             <Send size={18} />
                         </button>

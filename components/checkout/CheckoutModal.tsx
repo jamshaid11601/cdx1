@@ -191,7 +191,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
       />
 
       {/* Modal Card */}
-      <div className={`relative w-full ${gig?.title.includes('Custom Project') ? 'max-w-2xl' : 'max-w-5xl'} bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col md:flex-row max-h-[90vh] md:h-auto`}>
+      <div className={`relative w-full ${gig?.title.includes('Custom Project') ? 'max-w-2xl' : 'max-w-5xl'} bg-white rounded-[2rem] shadow-2xl overflow-y-auto max-h-[90vh] md:h-auto md:overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col md:flex-row`}>
 
         {/* Close Button */}
         <button
@@ -203,7 +203,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
 
         {/* Left Side: Order Summary - Hidden for Custom Requests */}
         {!gig.title.includes('Custom Project') && (
-          <div className="w-full md:w-5/12 bg-slate-50 p-8 md:p-10 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col">
+          <div className="w-full md:w-5/12 bg-slate-50 p-8 md:p-10 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
               <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white text-xs font-bold">C.</div>
               Order Summary
@@ -245,7 +245,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, gig, onS
         )}
 
         {/* Right Side: Payment Form */}
-        <div className={`${gig?.title.includes('Custom Project') ? 'w-full' : 'w-full md:w-7/12'} p-8 md:p-10 bg-white relative flex flex-col justify-center min-h-[500px]`}>
+        <div className={`${gig?.title.includes('Custom Project') ? 'w-full' : 'w-full md:w-7/12'} p-8 md:p-10 bg-white relative flex flex-col justify-center min-h-0 md:min-h-[500px]`}>
 
           {/* STEP: Payment Form */}
           {step === 'payment' && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, Eye, MessageSquare, Rocket, PlusCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Eye, MessageSquare, Rocket, PlusCircle, CreditCard } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import RequestMessaging from '../shared/RequestMessaging';
@@ -175,7 +175,7 @@ const ClientRequests: React.FC = () => {
             </header>
 
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-2 mb-8 bg-slate-100 p-1.5 rounded-xl self-start">
+            <div className="flex overflow-x-auto no-scrollbar gap-2 mb-8 bg-slate-100 p-1.5 rounded-xl self-start max-w-full">
                 {[
                     { id: 'all', label: 'All Requests' },
                     { id: 'pending', label: 'Pending' },
@@ -185,7 +185,7 @@ const ClientRequests: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setStatusFilter(tab.id as any)}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex-1 md:flex-none ${statusFilter === tab.id
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${statusFilter === tab.id
                             ? 'bg-white text-blue-600 shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                             }`}
@@ -253,7 +253,7 @@ const ClientRequests: React.FC = () => {
                                 )}
                             </div>
 
-                            <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
+                            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row gap-3">
                                 {request.status === 'converted' ? (
                                     <>
                                         <div className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg font-bold flex items-center justify-center gap-2">
@@ -286,9 +286,9 @@ const ClientRequests: React.FC = () => {
                                             e.stopPropagation();
                                             handlePayNow(request);
                                         }}
-                                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 animate-pulse"
+                                        className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 animate-pulse"
                                     >
-                                        💳 Pay ${request.approved_price.toLocaleString()} Now
+                                        <CreditCard size={18} /> Pay ${parseFloat(request.approved_price).toLocaleString()} Now
                                     </button>
                                 ) : (
                                     <>
