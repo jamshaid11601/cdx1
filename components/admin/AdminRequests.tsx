@@ -191,7 +191,7 @@ const AdminRequests: React.FC = () => {
                 <h2 className="text-2xl font-bold text-slate-900 mb-4">Custom Project Requests</h2>
 
                 {/* Status Tabs */}
-                <div className="flex gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4">
                     {[
                         { id: 'all', label: 'All' },
                         { id: 'pending', label: 'Pending' },
@@ -246,12 +246,12 @@ const AdminRequests: React.FC = () => {
                                             <p className="text-sm text-slate-500">{request.email}</p>
                                         </div>
                                     </div>
-                                    <span className={`px - 3 py - 1 rounded - full text - xs font - bold uppercase ${getStatusColor(request.status)} `}>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(request.status)}`}>
                                         {request.status}
                                     </span>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4 text-sm mb-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm mb-3">
                                     <div>
                                         <span className="text-slate-500">Category:</span>
                                         <p className="font-medium text-slate-900">{getCategoryLabel(request.category)}</p>
