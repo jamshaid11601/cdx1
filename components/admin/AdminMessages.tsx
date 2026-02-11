@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 interface Message {
     id: string;
     project_id: string | null;
+    request_id: string | null;
     sender_id: string;
     sender_type: 'client' | 'admin';
     message_text: string;
@@ -159,8 +160,10 @@ const AdminMessages: React.FC = () => {
 
         if (currentProject?.request_id) {
             messageData.request_id = currentProject.request_id;
+            messageData.project_id = null;
         } else {
             messageData.project_id = selectedProject;
+            messageData.request_id = null;
         }
 
         setLoading(true);

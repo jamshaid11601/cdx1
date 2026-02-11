@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface Message {
     id: string;
+    project_id: string | null;
     request_id: string | null;
     sender_id: string;
     sender_type: 'client' | 'admin';
@@ -14,11 +15,12 @@ interface Message {
 }
 
 interface RequestMessagingProps {
-    requestId: string;
+    requestId?: string;
+    projectId?: string;
     isAdmin?: boolean;
 }
 
-const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, isAdmin = false }) => {
+const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, projectId, isAdmin = false }) => {
     const { supabaseUser } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState('');
@@ -30,13 +32,21 @@ const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, isAdmin 
         fetchMessages();
 
         // Set up real-time subscription
+        const channelName = projectId
+            ? `project_messages_${projectId}`
+            : `request_messages_${requestId}`;
+
+        const filter = projectId
+            ? `project_id=eq.${projectId}`
+            : `request_id=eq.${requestId}`;
+
         const subscription = supabase
-            .channel(`request_messages_${requestId}`)
+            .channel(channelName)
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'messages',
-                filter: `request_id=eq.${requestId}`
+                filter: filter
             }, () => {
                 fetchMessages();
             })
@@ -45,7 +55,7 @@ const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, isAdmin 
         return () => {
             subscription.unsubscribe();
         };
-    }, [requestId]);
+    }, [requestId, projectId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -53,11 +63,17 @@ const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, isAdmin 
 
     const fetchMessages = async () => {
         try {
-            const { data, error } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('request_id', requestId)
-                .order('created_at', { ascending: true });
+            let query = supabase.from('messages').select('*');
+
+            if (projectId) {
+                query = query.eq('project_id', projectId);
+            } else if (requestId) {
+                query = query.eq('request_id', requestId);
+            } else {
+                return;
+            }
+
+            const { data, error } = await query.order('created_at', { ascending: true });
 
             if (error) throw error;
             setMessages(data || []);
@@ -76,7 +92,8 @@ const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, isAdmin 
             const { error } = await supabase
                 .from('messages')
                 .insert({
-                    request_id: requestId,
+                    request_id: requestId || null,
+                    project_id: projectId || null,
                     sender_id: supabaseUser.id,
                     sender_type: isAdmin ? 'admin' : 'client',
                     message_text: inputText.trim(),
@@ -119,8 +136,8 @@ const RequestMessaging: React.FC<RequestMessagingProps> = ({ requestId, isAdmin 
                         >
                             <div
                                 className={`max-w-[70%] p-4 rounded-2xl shadow-sm text-sm ${msg.sender_type === (isAdmin ? 'admin' : 'client')
-                                        ? 'bg-blue-600 text-white rounded-tr-none'
-                                        : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                                    ? 'bg-blue-600 text-white rounded-tr-none'
+                                    : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
                                     }`}
                             >
                                 <div className="whitespace-pre-wrap">{msg.message_text}</div>
