@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { PageView, Gig } from './types';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
@@ -378,6 +379,9 @@ export default function App() {
           Return to Dashboard
         </button>
       )}
+
+      {/* Vercel Speed Insights */}
+      <SpeedInsights />
     </div>
   );
 }
