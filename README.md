@@ -1,130 +1,59 @@
 <div align="center">
   <h1>🚀 Codexier</h1>
-  <p><strong>Enterprise Marketplace Platform for Software Development Services</strong></p>
-  <p>A proprietary full-stack SaaS application for managing software development projects.</p>
+  <p><strong>Enterprise Marketplace Platform</strong></p>
+  <p>Transforming software development workflows through innovative technology</p>
   
+  ![Private](https://img.shields.io/badge/Status-Private-red)
   ![React](https://img.shields.io/badge/React-18-blue?logo=react)
   ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-  ![Vite](https://img.shields.io/badge/Vite-5-purple?logo=vite)
   ![Supabase](https://img.shields.io/badge/Supabase-Backend-green?logo=supabase)
-  ![Private](https://img.shields.io/badge/Status-Private-red)
 </div>
 
 ---
 
-## ✨ Features
+## 🌟 About Codexier
 
-### 👤 Client Portal
-- Browse curated software development services
-- Submit custom project requests
-- Real-time messaging with admin team
-- Project tracking with visual progress indicators
-- Secure checkout and payment processing
-
-### 👨‍💼 Admin Dashboard
-- Manage all projects via Kanban board
-- Approve and price custom requests
-- Client communication hub
-- Service catalog management
-- Financial overview and reporting
-
-### 🎨 Design Philosophy
-- **Modern UI/UX**: Clean, professional interface with smooth animations
-- **Responsive**: Fully optimized for desktop and mobile
-- **Type-Safe**: Built with TypeScript for reliability
-- **Real-time**: Live updates via Supabase subscriptions
+Codexier is a proprietary full-stack SaaS platform designed to revolutionize how software development services are delivered. Built as an enterprise marketplace, it connects clients with premium development services through an intuitive, modern interface.
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Platform Features
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18 + TypeScript |
-| **Build Tool** | Vite |
-| **Styling** | Tailwind CSS |
-| **Backend** | Supabase (PostgreSQL) |
-| **Auth** | Supabase Auth |
-| **Deployment** | Vercel |
-| **CI/CD** | GitHub Actions |
-| **Analytics** | Vercel Speed Insights |
+### 👤 Client Experience
+- **Service Marketplace** - Browse curated software development services
+- **Custom Requests** - Submit unique project requirements
+- **Real-time Communication** - Direct messaging with development team
+- **Project Tracking** - Visual progress indicators and status updates
+- **Secure Payments** - Integrated checkout and payment processing
 
----
-
-## 🚀 Development Setup
-
-> **Note:** This is a private proprietary project. Access is restricted to authorized team members only.
-
-### Prerequisites
-- Node.js 18+ installed
-- Supabase account with project access
-- Git configured with repository access
-
-### Environment Configuration
-Create `.env.local` file with required credentials:
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-```
-
-### Installation
-```bash
-npm install
-```
-
-### Database Setup
-Run the SQL scripts in order:
-1. [supabase_schema.sql](./supabase_schema.sql)
-2. [CRITICAL_FIX_RUN_THIS.sql](./CRITICAL_FIX_RUN_THIS.sql)
-3. [MESSAGING_FINAL_FIX.sql](./MESSAGING_FINAL_FIX.sql)
-
-### Development Server
-```bash
-npm run dev
-```
+### 👨‍💼 Admin Operations
+- **Project Management** - Visual Kanban board for workflow optimization
+- **Request Approval** - Review and price custom client requests
+- **Communication Hub** - Centralized client messaging
+- **Service Management** - Full control over service catalog
+- **Financial Dashboard** - Revenue tracking and reporting
 
 ---
 
-## 🔐 Access Credentials
+## 🎨 Design & Experience
 
-See [CREDENTIALS.md](./CREDENTIALS.md) for test accounts (internal use only).
-
----
-
-## 📚 Internal Documentation
-
-- **[GITHUB_GUIDE.md](./GITHUB_GUIDE.md)** - Git workflow guide
-- **[TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md)** - System design
-- **[CREDENTIALS.md](./CREDENTIALS.md)** - Test credentials
+- **Modern Interface** - Clean, professional UI with smooth animations
+- **Fully Responsive** - Optimized for desktop, tablet, and mobile
+- **Real-time Updates** - Live synchronization across all features
+- **Type-Safe** - Built with TypeScript for maximum reliability
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Technology
 
-```
-codexier/
-├── components/          # React components
-│   ├── admin/          # Admin dashboard
-│   ├── client/         # Client portal
-│   ├── public/         # Public pages
-│   └── shared/         # Shared components
-├── contexts/           # React contexts
-├── lib/                # Supabase client
-├── .github/            # CI/CD workflows
-└── *.sql              # Database scripts
-```
-
----
-
-## 🚀 Deployment
-
-Deployed automatically via Vercel on push to `main` branch.
-
-### Manual Build
-```bash
-npm run build
-```
-Output: `dist/` directory
+Built with cutting-edge technologies:
+- React 18 + TypeScript
+- Vite Build System
+- Tailwind CSS
+- Supabase (PostgreSQL)
+- Vercel Deployment
+- GitHub Actions CI/CD
+- Vercel Speed Insights
 
 ---
 
@@ -132,19 +61,22 @@ Output: `dist/` directory
 
 **© 2026 Codexier. All Rights Reserved.**
 
-This is proprietary software developed for Codexier's internal operations. Unauthorized copying, distribution, modification, or use of this software, via any medium, is strictly prohibited without explicit written permission from Codexier.
+This software is the exclusive property of Codexier. All code, design, documentation, and related materials are protected by copyright law and proprietary rights.
+
+**Unauthorized reproduction, distribution, modification, or use of any part of this software is strictly prohibited and may result in severe civil and criminal penalties.**
 
 ---
 
-## 👨‍💻 Owner
+## 👨‍💻 About
 
-**Jamshaid**  
-Founder & Lead Developer  
+**Codexier** - Building Dreams Through Code
+
+Founded and developed by **Jamshaid**  
 GitHub: [@jamshaid11601](https://github.com/jamshaid11601)
 
 ---
 
 <div align="center">
-  <p><strong>Codexier - Building Dreams Through Code</strong></p>
-  <p>Built with ❤️ using React, TypeScript, and Supabase</p>
+  <p><strong>Codexier is a registered trademark.</strong></p>
+  <p><em>Innovating the future of software development services.</em></p>
 </div>
